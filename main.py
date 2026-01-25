@@ -50,13 +50,10 @@ skipEnabled = True
 offlineEnabled = False
 # if the user was offline during the track
 incognitoEnabled = False
-# not currently implemented, maybe in the future.
-
-# episodesEnabled = False
-# not currently implemented, maybe in the future. 
-# audiobooksEnabled = False
-# not currently implemented, maybe in the future.
-
+# if the user was in a private session.
+episodesEnabled = False
+# whether to track episode info (also enables show name). 
+#
 ################
 
 
@@ -92,27 +89,19 @@ print(fileName, "\n")
 path = "./Data/" + fileName
 # combines the folder path to make the final path leading to the right file
 
-print(path)
+print(path, "\n")
 
 with zipfile.ZipFile(path, 'r') as dataFiles:
     names = dataFiles.namelist()
-    # opens the Zip file and turns the names of all files inside into a list
-
-    # if dataFiles contains .pdf file, remove
-    # need to remove the pdf - it's the last one in the list so could play around that, maybe just ignore the last
     progress = 0
-
     for name in names:
-        print(name)
+        print(name, "\n")
         content = dataFiles.read(name)
         parsedData = json.loads(content)
         progress = progress + 1
         print("Progress is at", progress, "/", len(names),"\n")
-        break
-        """
-        print(parsedData[0])
         for line in parsedData:
-            fields_to_remove = ["ip_addr", "ip_addr_decrypted", "episode_name", "episode_show_name", "spotify_episode_uri", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
+            fields_to_remove = ["ip_addr", "ip_addr_decrypted", "spotify_episode_uri", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
             for field in fields_to_remove:
                 line.pop(field, None)
             if timeStampEnabled == False:
@@ -147,18 +136,15 @@ with zipfile.ZipFile(path, 'r') as dataFiles:
                 line.pop("offline", None)
             if incognitoEnabled == False:
                 line.pop("incognito_mode", None)
+            if episodesEnabled == False:
+                line.pop("episode_name", None)
+                line.pop("episode_show_name", None)
             else:
                 None
-            
             print(line)
-            break
-            """
-        # at this stage "parsedData" contains the full info about 1 song, each file contains a lot of songs
-        # first remove the curly brackets from the start and end, and split the elements with a comma
-        # parsedData = parsedData.translate(None, '{}')
-
-# somehow have to integrate this into the parsing to check for each or find a way to merge the strings together (replace the "ts" with "timestampEnabled" for example)
-# can't straight up sort as an array because some songs have stuff missing, have to individually grab lines
+            
+            # right now the script works as intended, it removes all unwanted elements of the streams and prints out the result
+            # next things are to not load the video file and the pdf
 
 # save all that info in an array of some sort (helper file)
 # once all the brackets are done, move to next file
@@ -166,34 +152,10 @@ with zipfile.ZipFile(path, 'r') as dataFiles:
 
 # maybe somehow turn all info into charts
 
-# example song
-"""
-{
-    "ts": "2015-02-01T18:11:45Z", = timeStampEnabled
-    username is missing here, but is present later = usernameEnabled
-    "platform": "OS X 11.0.1 [x86 8]", = platformEnabled
-    "ms_played": 14250, = timePlayedEnabled
-    "conn_country": "FI", = countryEnabled
-    "ip_addr": "88.112.15.25", never tracked
-    user agent is missing here, but is present later = userAgentEnabled
-    "master_metadata_track_name": "Sugar", = tracknameenabled
-    "master_metadata_album_artist_name": "Maroon 5", = artistNameEnabled
-    "master_metadata_album_album_name": "V", = albumNameEnabled
-    "spotify_track_uri": "spotify:track:6DrBnEWZ5kxvBiBaDaGQnc", = trackURLEnabled
-    "episode_name": null, not tracked
-    "episode_show_name": null, not tracked
-    "spotify_episode_uri": null, not tracked
-    "audiobook_title": null, not tracked
-    "audiobook_uri": null, not tracked
-    "audiobook_chapter_uri": null, not tracked
-    "audiobook_chapter_title": null, not tracked
-    "reason_start": "clickrow", reasonsEnabled
-    "reason_end": "fwdbtn", reasonsEnabled
-    "shuffle": false, shuffleEnabled
-    "skipped": true, skipEnabled
-    "offline": false, offlineEnabled
-    "offline_timestamp": null, not tracked
-    "incognito_mode": false = incognitoEnabled
-  },
+    # opens the Zip file and turns the names of all files inside into a list
 
-"""
+    # if dataFiles contains .pdf file, remove
+    # need to remove the pdf - it's the last one in the list so could play around that, maybe just ignore the last
+
+    # progress = 0
+    # just a visual tracker for where it goes, might remove later
