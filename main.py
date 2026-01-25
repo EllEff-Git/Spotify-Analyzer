@@ -7,30 +7,43 @@ try:
 except FileExistsError:
     None
 except PermissionError:
-    print("This program is placed in a read-only location, please relocate \n")
+    print("This program is placed in a read-only location and requires write permissions, please relocate \n")
     raise SystemExit
+# checks if the Data folder exists, makes one if not, and checks if it has write perms
 
-# quickly checks if the Data folder exists, makes one if not, and checks if it has write perms
-# later will need to implement some behavior to check for already existing files made by this script
+if os.path.exists('./Data/processed.json') == True:
+    ovwr = input('The data file already exists, do you want to overwrite it? Y/N: ')
+    print(ovwr)
+    if ovwr == "Y" or "y":
+        print("\n")
+    elif ovwr == "N" or "n":
+        raise SystemExit
+    else: 
+        print("Unknown command, try again. \n")
+        raise SystemExit
+else:
+    None
+# checks if the processed.json file already exists, warns user if yes
+
 
 
 ###################
 # CUSTOMISATION
 # these are all the different types of information that Spotify stores, turn them on/off at your leisure
-# currently only songs are supported, episodes and audiobooks are skipped (videos are enabled)
+# audiobooks are ignored, songs and episodes can be turned on/off
 #
 timeStampEnabled = True
 # timestamp (when the track was started)
 usernameEnabled = False
-# username
+# username (username)
 platformEnabled = False
 # platform (Android, Chromecast, iOS, etc)
 timePlayedEnabled = True
 # time listened to each track (this is the main thing people want, recommended to keep on)
 countryEnabled = False
-# list country per track (location at the listening time)
+# list country per track (location that Spotify logged)
 userAgentEnabled = False
-# list the streaming agent (Spotify, Firefox, etc)
+# list the streaming agent (Safari, Firefox, etc)
 trackNameEnabled = True
 # name of the track 
 artistNameEnabled = True
@@ -70,13 +83,17 @@ if 'mySpotifyData.zip' in dataArray:
     fileName = "mySpotifyData.zip"
     print("Correct file found\n")
     # the first file in the directory is the correct zip file
-if len(dataArray) == 1:
+if len(dataArray) < 3:
     if ".zip" in os.path.splitext(dataArray[0]):
         fileName = dataArray[0]
         print("Attempting to use the misnamed zip file in the Data folder.\n")
-        # uses the first available zip file in the hopes it's correct
+        # checks if the first file is a zip, then uses it if so
+    elif ".zip" in os.path.splitext(dataArray[1]):
+        fileName = dataArray[1]
+        print("Attempting to use the misnamed zip file in the Data folder.\n")
+        # checks if the second file is a zip, then uses it if so
     else:
-        print("The file found in Data folder does not match the correct type, please move your 'my_spotify_data.zip' file to the Data folder.\n")
+        print("The files found in Data folder do not match the correct type, please move your 'my_spotify_data.zip' file to the Data folder.\n")
         raise SystemExit
         # didn't find a zip file
 else:
@@ -92,57 +109,72 @@ path = "./Data/" + fileName
 print(path, "\n")
 
 with zipfile.ZipFile(path, 'r') as dataFiles:
+    # need to get rid of or ignore pdf + video file probably here, since it's where the zip is first opened
     names = dataFiles.namelist()
+    print(names)
     progress = 0
+    output = []
     for name in names:
         print(name, "\n")
         content = dataFiles.read(name)
         parsedData = json.loads(content)
         progress = progress + 1
         print("Progress is at", progress, "/", len(names),"\n")
-        for line in parsedData:
+        # counter to visualise progress
+        for stream in parsedData:
             fields_to_remove = ["ip_addr", "ip_addr_decrypted", "spotify_episode_uri", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
             for field in fields_to_remove:
-                line.pop(field, None)
+                stream.pop(field, None)
+            # removes all the fields that are outside the scope of this program
             if timeStampEnabled == False:
-                line.pop("ts", None)
+                stream.pop("ts", None)
             if usernameEnabled == False:
-                line.pop("username", None)
+                stream.pop("username", None)
             if platformEnabled == False:
-                line.pop("platform", None)
+                stream.pop("platform", None)
             if timePlayedEnabled == False:
-                line.pop("ms_played", None)
+                stream.pop("ms_played", None)
             if countryEnabled == False:
-                line.pop("conn_country", None)
+                stream.pop("conn_country", None)
             if userAgentEnabled == False:
-                line.pop("user_agent_decrypted", None)
+                stream.pop("user_agent_decrypted", None)
             if trackNameEnabled == False:
-                line.pop("master_metadata_track_name", None)
+                stream.pop("master_metadata_track_name", None)
             if artistNameEnabled == False:
-                line.pop("master_metadata_album_artist_name", None)
+                stream.pop("master_metadata_album_artist_name", None)
             if albumNameEnabled == False:
-                line.pop("master_metadata_album_album_name", None)
+                stream.pop("master_metadata_album_album_name", None)
             if trackURLEnabled == False:
-                line.pop("spotify_track_uri", None)
+                stream.pop("spotify_track_uri", None)
             if startReasonEnabled == False:
-                line.pop("reason_start", None)
+                stream.pop("reason_start", None)
             if stopReasonEnabled == False:
-                line.pop("reason_end", None)
+                stream.pop("reason_end", None)
             if shuffleEnabled == False:
-                line.pop("shuffle", None)
+                stream.pop("shuffle", None)
             if skipEnabled == False:
-                line.pop("skipped", None)
+                stream.pop("skipped", None)
             if offlineEnabled == False:
-                line.pop("offline", None)
+                stream.pop("offline", None)
             if incognitoEnabled == False:
-                line.pop("incognito_mode", None)
+                stream.pop("incognito_mode", None)
             if episodesEnabled == False:
-                line.pop("episode_name", None)
-                line.pop("episode_show_name", None)
+                stream.pop("episode_name", None)
+                stream.pop("episode_show_name", None)
             else:
                 None
-            print(line)
-            
+            # removes all the unwanted information according to the True/False statements at the document start
+            # stream has the final stream information as a dictionary
+            #print(stream)
+            output.append(stream)
+            print(output)
+            with open('./Data/processed.json', 'w'):
+                json.dumps(output, ensure_ascii=False, indent=0)
+
+            # dumps the current stream into a file
+            # for some reason it's duplicating streams, almost like it returned to the old behaviour where it'd print every time an if statement was processed, rather than at the end
+            # doesn't actually write to file, either because it doesn't finish the script (last died at 2025-11-27T22:37:15Z), or because of something else
+
             # right now the script works as intended, it removes all unwanted elements of the streams and prints out the result
             # next things are to not load the video file and the pdf
 
