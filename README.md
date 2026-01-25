@@ -2,9 +2,12 @@
 
 A small tool to analyze your Spotify streaming history data
 
+https://elleffnotelf.com
+
 ```
 How to use:
-    1. Get your streaming history from Spotify via https://www.spotify.com/us/account/privacy/, or by going to your account details -> "Account Privacy"
+    1. Get your streaming history from Spotify via https://www.spotify.com/us/account/privacy/, 
+                                    or by going to your account details -> "Account Privacy"
         Scroll down all the way to the bottom
         Check the checkbox for "Extended Streaming History" and uncheck "Account Data"
         Press the "Request Data" and return here when you receive the email with your data (1-30 business days, generally 2-3)
@@ -15,7 +18,6 @@ How to use:
         These dictate what information the tool will keep and display at the end
     5. Run the tool (for now, open main.py in an IDE and enter "python main.py" in the terminal)
 
-https://elleffnotelf.com
 
 
 $$$$$$$$\ $$\       $$\       
