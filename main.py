@@ -111,15 +111,19 @@ print(path, "\n")
 with zipfile.ZipFile(path, 'r') as dataFiles:
     # need to get rid of or ignore pdf + video file probably here, since it's where the zip is first opened
     names = dataFiles.namelist()
+    jsonNames = [a1 for a1 in names if a1.endswith("json")]
+    # excludes all the files that don't end in .json
+    jsonNames.sort()
+    # poorly sorts the files (since it goes alphabetically, - is higher in hierarchy than _, so e.g 2019-2020 comes before 2019_)
     print(names)
     progress = 0
     output = []
-    for name in names:
+    for name in jsonNames:
         print(name, "\n")
         content = dataFiles.read(name)
         parsedData = json.loads(content)
         progress = progress + 1
-        print("Progress is at", progress, "/", len(names),"\n")
+        print("Progress is at", progress, "/", len(jsonNames),"\n")
         # counter to visualise progress
         for stream in parsedData:
             fields_to_remove = ["ip_addr", "ip_addr_decrypted", "spotify_episode_uri", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
@@ -165,29 +169,22 @@ with zipfile.ZipFile(path, 'r') as dataFiles:
                 None
             # removes all the unwanted information according to the True/False statements at the document start
             # stream has the final stream information as a dictionary
-            #print(stream)
+            # print(stream)
             output.append(stream)
-            print(output)
-            with open('./Data/processed.json', 'w'):
-                json.dumps(output, ensure_ascii=False, indent=0)
+            # adds the current stream to the list 'output'
+        with open('./Data/processed.json', 'w') as a2:
+            json.dump(output, a2, ensure_ascii=True, indent=0)
+            # takes all the streams in 'output' and dumps them into the 'processed.json' files
 
-            # dumps the current stream into a file
-            # for some reason it's duplicating streams, almost like it returned to the old behaviour where it'd print every time an if statement was processed, rather than at the end
-            # doesn't actually write to file, either because it doesn't finish the script (last died at 2025-11-27T22:37:15Z), or because of something else
-
-            # right now the script works as intended, it removes all unwanted elements of the streams and prints out the result
-            # next things are to not load the video file and the pdf
+# next to-do:
+# take the now filtered results from processed.json and turn them into full information
+# ex. take all the streams from 2019 and add up the ms_played
+# another thing is to find a way to do "unique:" (counter) and then sort the streams into number of x (times listened to, artist appearance, album...)
+# next is time per action (per artist, per album)
+# then to chart it all in some pretty way
 
 # save all that info in an array of some sort (helper file)
 # once all the brackets are done, move to next file
 # once all *files* are done, give some sort of summary
 
 # maybe somehow turn all info into charts
-
-    # opens the Zip file and turns the names of all files inside into a list
-
-    # if dataFiles contains .pdf file, remove
-    # need to remove the pdf - it's the last one in the list so could play around that, maybe just ignore the last
-
-    # progress = 0
-    # just a visual tracker for where it goes, might remove later

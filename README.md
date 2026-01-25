@@ -2,6 +2,7 @@
 
 A small tool to analyze your Spotify streaming history data
 
+```
 How to use:
     1. Get your streaming history from Spotify via https://www.spotify.com/us/account/privacy/, or by going to your account details -> "Account Privacy"
         Scroll down all the way to the bottom
@@ -16,7 +17,7 @@ How to use:
 
 https://elleffnotelf.com
 
-```
+
 $$$$$$$$\ $$\       $$\       
 $$  _____|$$ |      $$ |      
 $$ |      $$ |      $$ |      
