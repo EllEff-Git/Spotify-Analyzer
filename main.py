@@ -6,16 +6,50 @@ import os
 # once the prompt is gone, check again
 # error if no file, continue if file found
 
+print("Your directory contains", os.listdir("./Data/"))
+
+dataArray = os.listdir("./Data")
+
+if not dataArray:
+    input("Please move your 'my_spotify_data.zip' file to the Data folder.")
+    # has no files, needs user to move zip there
+if 'mySpotifyData.zip' in dataArray:
+    fileName = "mySpotifyData.zip"
+    print("Correct file found")
+    # the first file in the directory is the correct zip file
+if len(dataArray) == 1:
+    print(os.path.splitext(dataArray[0]))
+    if ".zip" in os.path.splitext(dataArray[0]):
+        fileName = dataArray[0]
+        print("Attempting to use the misnamed zip file in the Data folder.")
+        # uses the first available zip file in the hopes it's correct
+    else:
+        print("The file found in Data folder does not match the correct type, please move your 'my_spotify_data.zip' file to the Data folder.")
+        raise SystemExit
+        # didn't find a zip file
+else:
+    print("Too many files found in the Data folder, please remove unnecessary files.")
+    raise SystemExit
+    # the correct file wasn't found and too may files are present
+    
+print(fileName)
+
+path = "./Data/" + fileName
+
+print(path)
+
 #zipf.read reads zipfile (one file inside the zip)
 #content.decode converts bytes -> string
 
 # for all files in data loop this
 
-fileName = "whatever the file is"
-
-with zipfile.Zipfile(fileName, "r") as zipf:
-    content = zipf.read(fileName)
+# I'll also need ZipFile.namelist() and then need to exclude the pdf and video files
+# after that I'll have to loop the zipfile reading process for all the right files
+"""
+with zipfile.ZipFile(path, "r") as zipf:
+    content = zipf.read(path)
     print(content.decode())
+"""
 
 #this is the main file that should handle most stuff
 
