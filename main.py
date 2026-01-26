@@ -3,7 +3,9 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from operator import itemgetter
+import datetime
+import tkinter as tk
+from tkinter import filedialog
 
 
 ###################
@@ -62,6 +64,7 @@ def processor():
         output = []
         # creates a progress counter and a list for the outputs to go
         # should write an if statement here that skips the whole processing part for testing and in case I want to use the data without re-formatting it
+        print("Starting processing, may take a while depending on number of streaming history files")
         for name in jsonNames:
             print((name.split("/"))[1], "\n")
             content = dataFiles.read(name)
@@ -116,7 +119,7 @@ def processor():
             with open('./Data/processed.json', 'w') as a2:
                 json.dump(output, a2, ensure_ascii=True, indent=0)
                 # takes all the streams in 'output' and dumps them into the 'processed.json' file
-    print("Processing complete, beginning analysing")
+    print("Processing complete, beginning analysing \n")
     output.clear()
     # empties the massive list of data
     analyser()
@@ -125,10 +128,9 @@ def processor():
 
 
 def analyser():
-    csvEmptier = open('./Data/formatted.csv', 'w')
+    csvEmptier = open('./Data/CSV/formatted.csv', 'w')
     csvEmptier.truncate()
     csvEmptier.close()
-    # empties the CSV (REPLACE WITH A BETTER SOLUTION, CURRENTLY CSV CAN ONLY APPEND!!!)
     with open('./Data/processed.json', 'r') as processedStreams:
         a3 = processedStreams.read()
         streamList = json.loads(a3)
@@ -136,15 +138,27 @@ def analyser():
         streamListLength = int((len(streamList)/5))
         # streamList contains every single track from all the json files, this splits it into smaller chunks
         csvList = []
+        # this part is split into sections because large enough transfers were causing crashes and memory errors
+        print("Starting analyser, this might take a while depending on filesize")
         #
         for stream in range(0,streamListLength):
             singleStream = streamList[stream]
+            # selects a single track from the list
             singleStreamName = singleStream.get("master_metadata_track_name")
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStream.get("ms_played")],"Timestamp":[singleStream.get("ts")],"Artist":[singleStream.get("master_metadata_album_artist_name")],"Album":[singleStream.get("master_metadata_album_album_name")],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))
+            singleStreamPlaytime = singleStream.get("ms_played")
+            singleStreamTimestamp = singleStream.get("ts")
+            singleStreamTemp = datetime.datetime.fromisoformat(singleStreamTimestamp)
+            singleStreamDate = singleStreamTemp.strftime('%Y-%m-%d')
+            singleStreamTime = singleStreamTemp.strftime('%H:%M:%S')
+            singleStreamArtist = singleStream.get("master_metadata_album_artist_name")
+            singleStreamAlbum = singleStream.get("master_metadata_album_album_name")
+            # splits each element into its own variable, to keep things shorter
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))
             # this long parameter-monster only goes until "platform" for now (missing 7 arguments)        
-        pd.concat(csvList).to_csv("./Data/formatted.csv", mode='a', index=False, header=True)
+        pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=True)
         csvList.clear()
-        print("First stage complete (0%-20%)")
+        # clears the list so it doesn't get double-dipped
+        print("First stage complete (20%)")
         #
         # larger gaps help with readability during maintenance/creation :)
         #
@@ -152,10 +166,18 @@ def analyser():
         # repeats the process for 20%+1 to 40% 
             singleStream = streamList[stream]
             singleStreamName = singleStream.get("master_metadata_track_name")
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStream.get("ms_played")],"Timestamp":[singleStream.get("ts")],"Artist":[singleStream.get("master_metadata_album_artist_name")],"Album":[singleStream.get("master_metadata_album_album_name")],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))      
-        pd.concat(csvList).to_csv("./Data/formatted.csv", mode='a', index=False, header=False)
+            singleStreamPlaytime = singleStream.get("ms_played")
+            singleStreamTimestamp = singleStream.get("ts")
+            singleStreamTemp = datetime.datetime.fromisoformat(singleStreamTimestamp)
+            singleStreamDate = singleStreamTemp.strftime('%Y-%m-%d')
+            singleStreamTime = singleStreamTemp.strftime('%H:%M:%S')
+            singleStreamArtist = singleStream.get("master_metadata_album_artist_name")
+            singleStreamAlbum = singleStream.get("master_metadata_album_album_name")
+            #
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))
+        pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
-        print("Second stage complete (20%-40%)")
+        print("Second stage complete (40%)")
         #
         #
         #
@@ -163,10 +185,18 @@ def analyser():
         # repeats the process for 40%+1 to 60% 
             singleStream = streamList[stream]
             singleStreamName = singleStream.get("master_metadata_track_name")
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStream.get("ms_played")],"Timestamp":[singleStream.get("ts")],"Artist":[singleStream.get("master_metadata_album_artist_name")],"Album":[singleStream.get("master_metadata_album_album_name")],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))      
-        pd.concat(csvList).to_csv("./Data/formatted.csv", mode='a', index=False, header=False)
+            singleStreamPlaytime = singleStream.get("ms_played")
+            singleStreamTimestamp = singleStream.get("ts")
+            singleStreamTemp = datetime.datetime.fromisoformat(singleStreamTimestamp)
+            singleStreamDate = singleStreamTemp.strftime('%Y-%m-%d')
+            singleStreamTime = singleStreamTemp.strftime('%H:%M:%S')
+            singleStreamArtist = singleStream.get("master_metadata_album_artist_name")
+            singleStreamAlbum = singleStream.get("master_metadata_album_album_name")
+            #
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))
+        pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
-        print("Third stage complete (40%-60%)")
+        print("Third stage complete (60%)")
         #
         #
         #
@@ -174,10 +204,18 @@ def analyser():
         # repeats the process for 60%+1 to 80% 
             singleStream = streamList[stream]
             singleStreamName = singleStream.get("master_metadata_track_name")
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStream.get("ms_played")],"Timestamp":[singleStream.get("ts")],"Artist":[singleStream.get("master_metadata_album_artist_name")],"Album":[singleStream.get("master_metadata_album_album_name")],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))      
-        pd.concat(csvList).to_csv("./Data/formatted.csv", mode='a', index=False, header=False)
+            singleStreamPlaytime = singleStream.get("ms_played")
+            singleStreamTimestamp = singleStream.get("ts")
+            singleStreamTemp = datetime.datetime.fromisoformat(singleStreamTimestamp)
+            singleStreamDate = singleStreamTemp.strftime('%Y-%m-%d')
+            singleStreamTime = singleStreamTemp.strftime('%H:%M:%S')
+            singleStreamArtist = singleStream.get("master_metadata_album_artist_name")
+            singleStreamAlbum = singleStream.get("master_metadata_album_album_name")
+            #
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))
+        pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
-        print("Fourth stage complete (60%-80%)")
+        print("Fourth stage complete (80%)")
         #
         #
         #
@@ -185,30 +223,53 @@ def analyser():
         # repeats the process for 80%+1 to 100% 
             singleStream = streamList[stream]
             singleStreamName = singleStream.get("master_metadata_track_name")
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStream.get("ms_played")],"Timestamp":[singleStream.get("ts")],"Artist":[singleStream.get("master_metadata_album_artist_name")],"Album":[singleStream.get("master_metadata_album_album_name")],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))      
-        pd.concat(csvList).to_csv("./Data/formatted.csv", mode='a', index=False, header=False)
+            singleStreamPlaytime = singleStream.get("ms_played")
+            singleStreamTimestamp = singleStream.get("ts")
+            singleStreamTemp = datetime.datetime.fromisoformat(singleStreamTimestamp)
+            singleStreamDate = singleStreamTemp.strftime('%Y-%m-%d')
+            singleStreamTime = singleStreamTemp.strftime('%H:%M:%S')
+            singleStreamArtist = singleStream.get("master_metadata_album_artist_name")
+            singleStreamAlbum = singleStream.get("master_metadata_album_album_name")
+            #
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Time":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStream.get("reason_start")],"End Reason":[singleStream.get("reason_end")],"Shuffle":[singleStream.get("shuffle")],"Skipped":[singleStream.get("skipped")],"Username":[singleStream.get("username")],"Platform":[singleStream.get("platform")]}))
+        pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
-        print("Final stage complete (80%-100%)")
+        #
+        mathematician()
+        #
+        print("Final stage complete \n")
 
+def mathematician():
+    print("CSV data stored, starting data comprising. This stage may take a while")
+    # this is the part that takes all the data from the CSV and reformats it *again* into chartable data (combines song playtimes, time per day, time per month, time per album (basically just time per x))
+
+
+# def charter():
+# the final function that draws charts
+# now that the CSV works, maybe next it's time for data cleanup
+
+
+# next to-do:
+# ex. take all the streams from 2019 and add up the ms_played
+# another thing is to find a way to do "unique:" (counter) and then sort the streams into number of x (times listened to, artist appearance, album...)
+# next is time per action (per artist, per album)
+# then to chart it all in some pretty way
     
-# now to replace the "print" with the actual function (take them and sort them, maybe do song counter first)
-# since it's always tied to "master_metadata_track_name":, I can just always search the list and dictionary for that specific key
-# dict("master_metadata_track_name")
-
-# need to reformat each dictionary so that they follow "master_metadata_track_name" (or "episode_name" (episode addon later))
-# the good thing is that the list won't change, so I can just run the program over and over with a different dictionary key every time on a loop without breaking any data
-# so for example, I'd run the song first
-# it'd look for "master_metadata_track_name"
-# also, it has to have some way to expand this search based on which keys are in each dictionary (episodes, incognito, url... enabled vs disabled)
-
-
-# ex.
-# Sugar (263 plays), 5391035 ms played, Maroon 5 (200 appearances), V (125 appearances)
-# ideally formatted in a way that can save files as .csv so they can just be exported to 
-
+    """
+        postMath = input("CSV math is complete, do you wish to continue to charting? Y/N: ")
+        if postMath == "Y" or postMath == "y":
+            mathematician()
+            print("Currently unimplemented")
+            raise SystemExit
+        elif postMath == "N" or postMath == "n":
+            print("Exiting")
+            raise SystemExit
+        else:
+            print("Unknown command, exiting")
+            raise SystemExit
+        """
 
 
-# input("All streams processed, would you like to print a .csv file? Y/N: ")
 
 try:
     os.mkdir('Data')
@@ -219,38 +280,40 @@ except PermissionError:
     raise SystemExit
 # checks if the Data folder exists, makes one if not, and checks if it has write perms
 
+try:
+    os.mkdir('Data/CSV')
+except FileExistsError:
+    None
+# checks if the CSV subfolder exists, makes one if not
+
 
 
 print("Your directory contains", os.listdir("./Data/"),"\n")
 # lists the elements inside the Data folder (user/debug info)
 
 dataArray = os.listdir("./Data")
-
-zips = [ax for ax in dataArray if ax.endswith("zip")]
-
 # the directory information stored for the checks below
 
-#
-# could change this if check to prompt the user in case more than 1 zip file is found
-#
+zips = [ax for ax in dataArray if ax.endswith("zip")]
+# checks the directory for files with .zip
 
-if not dataArray:
-    input("Please move your 'my_spotify_data.zip' file to the Data folder.\n")
-    # has no files, needs user to move zip there
+
+
 if 'mySpotifyData.zip' in dataArray:
     fileName = "mySpotifyData.zip"
     print("Correct file found\n")
     # the first file in the directory is the correct zip file
+elif len(zips) == 0:
+    print("No zip files found, please place it in the Data folder")
+    raise SystemExit
 elif len(zips) == 1:
     fileName = zips[0]
     print("Attempting to use the misnamed zip file in the Data folder\n")
 elif len(zips) > 1:
-    chosenZip = input("Found more than 1 .zip file, which one do you want to use?", zips[0], zips[1], "\n")
-    fileName = chosenZip
-elif len(dataArray) > 5:
-    print("Too many files found in the Data folder, please remove unnecessary files.\n")
-    raise SystemExit
-    # the correct file wasn't found and too may files are present
+    prompt = tk.Tk(screenName="Multiple zip files found, please select the zip file manually")
+    prompt.withdraw()
+    fileName = filedialog.askopenfilename(title=("Please select your streaming history file"), filetypes=[("Zip", '*.zip')])
+    # there are multiple zip files in the directory, user has to choose one
 else:
     print("Unknown error has occurred, please try again")
     raise SystemExit
@@ -261,25 +324,25 @@ path = "./Data/" + fileName
 
 
 if os.path.exists('./Data/processed.json') == True:
-    overwriteStatus = input('The data file already exists, do you want to overwrite it? Y/N: ')
+    overwriteStatus = input('The data file already exists, do you want to overwrite it and begin processing? Y/N: ')
     # checks if the processed.json file already exists, warns user if yes
     if overwriteStatus == "Y" or overwriteStatus == "y":
-        print("\n")
+        print("Overwriting. \n")
         processor()
         # if user wants to ignore previous data and re-process or process new data, starts processor
     elif overwriteStatus == "N" or overwriteStatus == "n":
         # user does not want to overwrite data, asking if skip processing altogether 
-        skipProcessor = input('Do you want to skip the processing and begin analysation? Y/N: ')
+        skipProcessor = input('Do you want to skip the processing and begin analysing? Y/N: ')
         print("\n")
         if skipProcessor == "Y" or skipProcessor == "y":
-            print("\n")
+            print("Analysing. \n")
             analyser()
             # user wants to skip processing but wants to analyse existing data
         elif skipProcessor == "N" or skipProcessor == "n":
             raise SystemExit
             # no usecase for now, exiting
     else: 
-        print("Unknown command, try again. \n")
+        print("Unknown command, exiting. \n")
         raise SystemExit
         # user did not follow prompts, exiting
 elif os.path.exists('./Data/processed.json') == False:
@@ -287,28 +350,4 @@ elif os.path.exists('./Data/processed.json') == False:
     # in case the file does not exist, skips prompts and starts processor
 else:
     print("Unknown error occurred, please check files and try again")
-    None
-
-
-# next to-do:
-# take the now filtered results from processed.json and turn them into full information
-# ex. take all the streams from 2019 and add up the ms_played
-# another thing is to find a way to do "unique:" (counter) and then sort the streams into number of x (times listened to, artist appearance, album...)
-# next is time per action (per artist, per album)
-# then to chart it all in some pretty way
-
-"""
-if len(dataArray) < 4:
-    if ".zip" in os.path.splitext(dataArray[0]):
-        fileName = dataArray[0]
-        print("Attempting to use the misnamed zip file in the Data folder.\n")
-        # checks if the first file is a zip, then uses it if so
-    elif ".zip" in os.path.splitext(dataArray[1]):
-        fileName = dataArray[1]
-        print("Attempting to use the misnamed zip file in the Data folder.\n")
-        # checks if the second file is a zip, then uses it if so
-    else:
-        print("The files found in Data folder do not match the correct type, please move your 'my_spotify_data.zip' file to the Data folder.\n")
-        raise SystemExit
-        # didn't find a zip file
-"""
+    raise SystemExit
