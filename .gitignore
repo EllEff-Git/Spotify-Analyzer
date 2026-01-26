@@ -1,4 +1,5 @@
 !Data
 !.gitignore
+!config.ini
 !main.py
 !README.md

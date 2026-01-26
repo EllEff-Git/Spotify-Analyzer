@@ -6,49 +6,9 @@ import pandas as pd
 import datetime
 import tkinter as tk
 from tkinter import filedialog
+import configparser
 
 
-###################
-# CUSTOMISATION
-# these are all the different types of information that Spotify stores, turn them on/off at your leisure
-# audiobooks are ignored, songs and episodes can be turned on/off
-#
-trackNameEnabled = True
-# name of the track 
-timePlayedEnabled = True
-# time listened to each track
-timeStampEnabled = True
-# timestamp (when the track was started)
-artistNameEnabled = True
-# name of the artist
-albumNameEnabled = True
-# name of the album
-startReasonEnabled = True
-# why the track was started
-stopReasonEnabled = True
-# why the track stopped
-shuffleEnabled = True
-# if Shuffle was enabled during the track
-skipEnabled = True
-# if the track was skipped prematurely
-usernameEnabled = False
-# username (username)
-platformEnabled = False
-# platform (Android, Chromecast, iOS, etc)
-episodesEnabled = False
-# whether to track episode info (also enables show name). 
-trackURLEnabled = False
-# Spotify's own URL for the track
-countryEnabled = False
-# list country per track (location that Spotify logged)
-userAgentEnabled = False
-# list the streaming agent (Safari, Firefox, etc)
-offlineEnabled = False
-# if the user was offline during the track
-incognitoEnabled = False
-# if the user was in a private session.
-#
-################
 
 
 
@@ -64,7 +24,7 @@ def processor():
         output = []
         # creates a progress counter and a list for the outputs to go
         # should write an if statement here that skips the whole processing part for testing and in case I want to use the data without re-formatting it
-        print("Starting processing, may take a while depending on number of streaming history files")
+        print("Starting processing, may take a while depending on number of streaming history files \n")
         for name in jsonNames:
             print((name.split("/"))[1], "\n")
             content = dataFiles.read(name)
@@ -72,58 +32,61 @@ def processor():
             progress = progress + 1
             print("Progress is at", progress, "/", len(jsonNames),"\n")
             # counter to visualise progress
+            Config.read('./config.ini')
             for stream in parsedData:
-                fields_to_remove = ["ip_addr", "ip_addr_decrypted", "spotify_episode_uri", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
+                fields_to_remove = ["ip_addr", "ip_addr_decrypted", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
                 for field in fields_to_remove:
                     stream.pop(field, None)
-                # removes all the fields that are outside the scope of this program
-                if trackNameEnabled == False:
-                    stream.pop("master_metadata_track_name", None)
-                if timePlayedEnabled == False:
-                    stream.pop("ms_played", None)
-                if timeStampEnabled == False:
-                    stream.pop("ts", None)
-                if artistNameEnabled == False:
-                    stream.pop("master_metadata_album_artist_name", None)
-                if albumNameEnabled == False:
-                    stream.pop("master_metadata_album_album_name", None)
-                if startReasonEnabled == False:
-                    stream.pop("reason_start", None)
-                if stopReasonEnabled == False:
-                    stream.pop("reason_end", None)
-                if shuffleEnabled == False:
-                    stream.pop("shuffle", None)
-                if skipEnabled == False:
-                    stream.pop("skipped", None)
-                if usernameEnabled == False:
-                    stream.pop("username", None)
-                if platformEnabled == False:
-                    stream.pop("platform", None)
-                if episodesEnabled == False:
-                    stream.pop("episode_name", None)
-                    stream.pop("episode_show_name", None)
-                if trackURLEnabled == False:
-                    stream.pop("spotify_track_uri", None)
-                if countryEnabled == False:
-                    stream.pop("conn_country", None)
-                if userAgentEnabled == False:
-                    stream.pop("user_agent_decrypted", None)
-                if offlineEnabled == False:
-                    stream.pop("offline", None)
-                if incognitoEnabled == False:
-                    stream.pop("incognito_mode", None)
-                else:
-                    None
-                # removes all the unwanted information according to the each of the True/False statements at the document start
-                output.append(stream)
-            with open('./Data/processed.json', 'w') as a2:
-                json.dump(output, a2, ensure_ascii=True, indent=0)
-                # takes all the streams in 'output' and dumps them into the 'processed.json' file
-    print("Processing complete, beginning analysing \n")
-    output.clear()
-    # empties the massive list of data
-    analyser()
-    # calls the analyser to start the next step
+                    # first removes all the fields that are outside the scope of this program
+                    if Config.getboolean("Options", "trackNameEnabled") == False:
+                        stream.pop("master_metadata_track_name", None)
+                    if Config.getboolean("Options", "timePlayedEnabled") == False:
+                        stream.pop("ms_played", None)
+                    if Config.getboolean("Options", "timeStampEnabled") == False:
+                        stream.pop("ts", None)
+                    if Config.getboolean("Options", "artistNameEnabled") == False:
+                        stream.pop("master_metadata_album_artist_name", None)   
+                    if Config.getboolean("Options", "albumNameEnabled") == False:
+                        stream.pop("master_metadata_album_album_name", None)
+                    if Config.getboolean("Options", "startReasonEnabled") == False:
+                        stream.pop("reason_start", None)
+                    if Config.getboolean("Options", "stopReasonEnabled") == False:
+                        stream.pop("reason_end", None)
+                    if Config.getboolean("Options", "shuffleEnabled") == False:
+                        stream.pop("shuffle", None)
+                    if Config.getboolean("Options", "skipEnabled") == False:
+                        stream.pop("skipped", None)
+                    if Config.getboolean("Options", "usernameEnabled") == False:
+                        stream.pop("username", None)
+                    if Config.getboolean("Options", "platformEnabled") == False:
+                        stream.pop("platform", None)
+                    if Config.getboolean("Options", "episodesEnabled") == False:
+                        stream.pop("episode_name", None)
+                        stream.pop("episode_show_name", None)
+                    if Config.getboolean("Options", "trackURLEnabled") == False:
+                        stream.pop("spotify_track_uri", None)
+                    if Config.getboolean("Options", "episodeURLEnabled") == False:
+                        stream.pop("spotify_episode_uri", None)
+                    if Config.getboolean("Options", "countryEnabled") == False:
+                        stream.pop("conn_country", None)
+                    if Config.getboolean("Options", "userAgentEnabled") == False:
+                        stream.pop("user_agent_decrypted", None)
+                    if Config.getboolean("Options", "offlineEnabled") == False:
+                        stream.pop("offline", None)
+                    if Config.getboolean("Options", "incognitoEnabled") == False:
+                        stream.pop("incognito_mode", None)
+                    else:
+                        None
+                    # removes all the unwanted information according to the each of the config options (config.ini)
+                    output.append(stream)
+                with open('./Data/processed.json', 'w') as a2:
+                    json.dump(output, a2, ensure_ascii=True, indent=0)
+                    # takes all the streams in 'output' and dumps them into the 'processed.json' file
+        print("Processing complete, beginning analysing \n")
+        output.clear()
+        # empties the massive list of data
+        analyser()
+        # calls the analyser to start the next step
 
 
 
@@ -297,6 +260,7 @@ dataArray = os.listdir("./Data")
 zips = [ax for ax in dataArray if ax.endswith("zip")]
 # checks the directory for files with .zip
 
+Config = configparser.ConfigParser()
 
 
 if 'mySpotifyData.zip' in dataArray:
@@ -323,9 +287,9 @@ path = "./Data/" + fileName
 
 
 
-if os.path.exists('./Data/processed.json') == True:
+if os.path.exists('./Data/processed.json') == True and Config.getboolean("Function", "alwaysSkipProcessing") == False:
     overwriteStatus = input('The data file already exists, do you want to overwrite it and begin processing? Y/N: ')
-    # checks if the processed.json file already exists, warns user if yes
+    # checks if the processed.json file already exists and checks config status, warns user if yes
     if overwriteStatus == "Y" or overwriteStatus == "y":
         print("Overwriting. \n")
         processor()
@@ -348,6 +312,10 @@ if os.path.exists('./Data/processed.json') == True:
 elif os.path.exists('./Data/processed.json') == False:
     processor()
     # in case the file does not exist, skips prompts and starts processor
+elif Config.getboolean("Function", "alwaysSkipProcessing") == True:
+    print("Processing skip is enabled in config, skipping to analyse")
+    analyser()
+    # if the config setting for skipping processor is on, skips prompts and starts analyser
 else:
     print("Unknown error occurred, please check files and try again")
     raise SystemExit
