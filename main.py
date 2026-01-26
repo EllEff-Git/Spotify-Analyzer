@@ -151,7 +151,11 @@ print("Your directory contains", os.listdir("./Data/"),"\n")
 # lists the elements inside the Data folder (user/debug info)
 
 dataArray = os.listdir("./Data")
-# the directory information
+# the directory information stored for the checks below
+
+#
+# could change this if check to prompt the user in case more than 1 zip file is found
+#
 
 if not dataArray:
     input("Please move your 'my_spotify_data.zip' file to the Data folder.\n")
@@ -185,26 +189,29 @@ path = "./Data/" + fileName
 
 if os.path.exists('./Data/processed.json') == True:
     ovwr = input('The data file already exists, do you want to overwrite it? Y/N: ')
+    # checks if the processed.json file already exists, warns user if yes
     if ovwr == "Y" or "y":
         print("\n")
         processor()
+        # if user wants to ignore previous data and re-process or process new data, starts processor
     elif ovwr == "N" or "n":
         print("\n")
+        # user does not want to overwrite data, asking if skip processing altogether 
         skipProcessor = input('Do you want to skip the processing and begin analysation? Y/N: ')
         if skipProcessor == "Y" or "y":
             print("\n")
             analyser()
+            # user wants to skip processing but wants to analyse existing data
         elif skipProcessor == "N" or "n":
             raise SystemExit
+            # no usecase for now, exiting
     else: 
         print("Unknown command, try again. \n")
         raise SystemExit
+        # user did not follow prompts, exiting
 else:
-    None
-# checks if the processed.json file already exists, warns user if yes
-
-
-
+    processor()
+    # in case the file does not exist, skips prompts and starts processor
 
 
 
