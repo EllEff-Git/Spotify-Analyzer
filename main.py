@@ -114,7 +114,7 @@ with zipfile.ZipFile(path, 'r') as dataFiles:
     jsonNames = [a1 for a1 in names if a1.endswith("json")]
     # excludes all the files that don't end in .json
     jsonNames.sort()
-    # poorly sorts the files (since it goes alphabetically, - is higher in hierarchy than _, so e.g 2019-2020 comes before 2019_)
+    # poorly sorts the files (since it goes alphabetically, - comes before _, so e.g 2019-2020 is processed before 2019_)
     print(names)
     progress = 0
     output = []
@@ -167,14 +167,20 @@ with zipfile.ZipFile(path, 'r') as dataFiles:
                 stream.pop("episode_show_name", None)
             else:
                 None
-            # removes all the unwanted information according to the True/False statements at the document start
-            # stream has the final stream information as a dictionary
-            # print(stream)
+            # removes all the unwanted information according to the each of the True/False statements at the document start
             output.append(stream)
-            # adds the current stream to the list 'output'
         with open('./Data/processed.json', 'w') as a2:
             json.dump(output, a2, ensure_ascii=True, indent=0)
             # takes all the streams in 'output' and dumps them into the 'processed.json' files
+    print("Processing complete, beginning analyzing")
+    output.clear()
+    # empties the massive list of data
+    with open('./Data/processed.json', 'r') as processedStreams:
+        a3 = processedStreams.read()
+        a4 = json.loads(a3)
+        print(a4[0])
+        print(len(a4))
+        # starts the analysation by reloading the json in a different variable
 
 # next to-do:
 # take the now filtered results from processed.json and turn them into full information
@@ -182,9 +188,3 @@ with zipfile.ZipFile(path, 'r') as dataFiles:
 # another thing is to find a way to do "unique:" (counter) and then sort the streams into number of x (times listened to, artist appearance, album...)
 # next is time per action (per artist, per album)
 # then to chart it all in some pretty way
-
-# save all that info in an array of some sort (helper file)
-# once all the brackets are done, move to next file
-# once all *files* are done, give some sort of summary
-
-# maybe somehow turn all info into charts
