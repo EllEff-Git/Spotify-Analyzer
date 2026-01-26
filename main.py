@@ -25,65 +25,69 @@ def processor():
         # creates a progress counter and a list for the outputs to go
         # should write an if statement here that skips the whole processing part for testing and in case I want to use the data without re-formatting it
         print("Starting processing, may take a while depending on number of streaming history files \n")
+        fields_to_remove = ["ip_addr", "ip_addr_decrypted", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
+        # the base list of information to filter out
+        if Config.getboolean("Options", "trackNameEnabled") == False:
+            fields_to_remove.append("master_metadata_track_name")
+        if Config.getboolean("Options", "timePlayedEnabled") == False:
+            fields_to_remove.append("ms_played")
+        if Config.getboolean("Options", "timeStampEnabled") == False:
+            fields_to_remove.append("ts")
+        if Config.getboolean("Options", "artistNameEnabled") == False:
+            fields_to_remove.append("master_metadata_album_artist_name")   
+        if Config.getboolean("Options", "albumNameEnabled") == False:
+            fields_to_remove.append("master_metadata_album_album_name")
+        if Config.getboolean("Options", "startReasonEnabled") == False:
+            fields_to_remove.append("reason_start")
+        if Config.getboolean("Options", "stopReasonEnabled") == False:
+            fields_to_remove.append("reason_end")
+        if Config.getboolean("Options", "shuffleEnabled") == False:
+            fields_to_remove.append("shuffle")
+        if Config.getboolean("Options", "skipEnabled") == False:
+            fields_to_remove.append("skipped")
+        if Config.getboolean("Options", "usernameEnabled") == False:
+            fields_to_remove.append("username")
+        if Config.getboolean("Options", "platformEnabled") == False:
+            fields_to_remove.append("platform")
+        if Config.getboolean("Options", "episodesEnabled") == False:
+            fields_to_remove.append("episode_name")
+            fields_to_remove.append("episode_show_name")
+        if Config.getboolean("Options", "trackURLEnabled") == False:
+            fields_to_remove.append("spotify_track_uri")
+        if Config.getboolean("Options", "episodeURLEnabled") == False:
+            fields_to_remove.append("spotify_episode_uri")
+        if Config.getboolean("Options", "countryEnabled") == False:
+            fields_to_remove.append("conn_country")
+        if Config.getboolean("Options", "userAgentEnabled") == False:
+            fields_to_remove.append("user_agent_decrypted")
+        if Config.getboolean("Options", "offlineEnabled") == False:
+            fields_to_remove.append("offline")
+        if Config.getboolean("Options", "incognitoEnabled") == False:
+            fields_to_remove.append("incognito_mode")
+        else:
+            None
+        # adds all the configurable options into the removeable fields list
         for name in jsonNames:
-            print((name.split("/"))[1], "\n")
+            # picks a file from the list of json files
             content = dataFiles.read(name)
+            # reads the file
             parsedData = json.loads(content)
+            # picks out the data from the read file
             progress = progress + 1
+            print("Current file:", (name.split("/"))[1], "\n")
             print("Progress is at", progress, "/", len(jsonNames),"\n")
-            # counter to visualise progress
-            Config.read('./config.ini')
+            # counter and file name to visualise progress
             for stream in parsedData:
-                fields_to_remove = ["ip_addr", "ip_addr_decrypted", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
                 for field in fields_to_remove:
-                    stream.pop(field, None)
-                    # first removes all the fields that are outside the scope of this program
-                    if Config.getboolean("Options", "trackNameEnabled") == False:
-                        stream.pop("master_metadata_track_name", None)
-                    if Config.getboolean("Options", "timePlayedEnabled") == False:
-                        stream.pop("ms_played", None)
-                    if Config.getboolean("Options", "timeStampEnabled") == False:
-                        stream.pop("ts", None)
-                    if Config.getboolean("Options", "artistNameEnabled") == False:
-                        stream.pop("master_metadata_album_artist_name", None)   
-                    if Config.getboolean("Options", "albumNameEnabled") == False:
-                        stream.pop("master_metadata_album_album_name", None)
-                    if Config.getboolean("Options", "startReasonEnabled") == False:
-                        stream.pop("reason_start", None)
-                    if Config.getboolean("Options", "stopReasonEnabled") == False:
-                        stream.pop("reason_end", None)
-                    if Config.getboolean("Options", "shuffleEnabled") == False:
-                        stream.pop("shuffle", None)
-                    if Config.getboolean("Options", "skipEnabled") == False:
-                        stream.pop("skipped", None)
-                    if Config.getboolean("Options", "usernameEnabled") == False:
-                        stream.pop("username", None)
-                    if Config.getboolean("Options", "platformEnabled") == False:
-                        stream.pop("platform", None)
-                    if Config.getboolean("Options", "episodesEnabled") == False:
-                        stream.pop("episode_name", None)
-                        stream.pop("episode_show_name", None)
-                    if Config.getboolean("Options", "trackURLEnabled") == False:
-                        stream.pop("spotify_track_uri", None)
-                    if Config.getboolean("Options", "episodeURLEnabled") == False:
-                        stream.pop("spotify_episode_uri", None)
-                    if Config.getboolean("Options", "countryEnabled") == False:
-                        stream.pop("conn_country", None)
-                    if Config.getboolean("Options", "userAgentEnabled") == False:
-                        stream.pop("user_agent_decrypted", None)
-                    if Config.getboolean("Options", "offlineEnabled") == False:
-                        stream.pop("offline", None)
-                    if Config.getboolean("Options", "incognitoEnabled") == False:
-                        stream.pop("incognito_mode", None)
-                    else:
-                        None
+                    stream.pop(field, None)                    
                     # removes all the unwanted information according to the each of the config options (config.ini)
                     output.append(stream)
-                with open('./Data/processed.json', 'w') as a2:
-                    json.dump(output, a2, ensure_ascii=True, indent=0)
-                    # takes all the streams in 'output' and dumps them into the 'processed.json' file
+                    # pushes the current stream's info into the output list
+            with open('./Data/processed.json', 'w') as a2:
+                json.dump(output, a2, ensure_ascii=True, indent=0)
+                output.clear()
+                # takes all the streams in 'output' and dumps them into the 'processed.json' file
         print("Processing complete, beginning analysing \n")
-        output.clear()
         # empties the massive list of data
         analyser()
         # calls the analyser to start the next step
@@ -261,20 +265,17 @@ zips = [ax for ax in dataArray if ax.endswith("zip")]
 # checks the directory for files with .zip
 
 Config = configparser.ConfigParser()
-
+Config.read('./config.ini')
 
 if 'mySpotifyData.zip' in dataArray:
     fileName = "mySpotifyData.zip"
     print("Correct file found\n")
     # the first file in the directory is the correct zip file
-elif len(zips) == 0:
-    print("No zip files found, please place it in the Data folder")
-    raise SystemExit
 elif len(zips) == 1:
     fileName = zips[0]
     print("Attempting to use the misnamed zip file in the Data folder\n")
-elif len(zips) > 1:
-    prompt = tk.Tk(screenName="Multiple zip files found, please select the zip file manually")
+elif len(zips) > 1 or len(zips) == 0:
+    prompt = tk.Tk(screenName="Multiple or no zip files found, please select the zip file manually")
     prompt.withdraw()
     fileName = filedialog.askopenfilename(title=("Please select your streaming history file"), filetypes=[("Zip", '*.zip')])
     # there are multiple zip files in the directory, user has to choose one
