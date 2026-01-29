@@ -29,8 +29,9 @@ How to use:
         On subsequent runs, you will be prompted for options (whether you want to change the existing data or not)
 
     6. Wait for the data to be processed
-        Once the data is processed, you will be prompted to continue - at this point the tool has already created a CSV file you can import to any software
-        You can continue and the tool will create charts automatically
+        Once the data is processed, you will be prompted to continue - 
+            at this point the tool has already created a CSV file you can import to any software
+        You can continue and the tool will create stats and charts automatically
 
 
 
