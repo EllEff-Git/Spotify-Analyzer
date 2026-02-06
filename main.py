@@ -28,7 +28,7 @@ def processor():
         jsonEmptier.truncate()
         jsonEmptier.close()
         # empties the processed.json file, this way the method later can use "append", rather than write, so it can be cleared more often
-        print("Starting processing, may take a while depending on number of streaming history files \n")
+        print("Starting processing, should be done shortly \n")
         fields_to_remove = ["ip_addr", "ip_addr_decrypted", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp"]
         # the base list of information to filter out
         if Config.getboolean("Options", "trackNameEnabled") == False:
@@ -131,6 +131,7 @@ def processor():
 
 
 def analyser():
+    # the is split into sections because large enough transfers were causing crashes and memory errors (and it took so long it seemed like it'd stalled)
     print("Clearing temp CSV file")
     csvEmptier = open('./Data/CSV/formatted.csv', 'w')
     csvEmptier.truncate()
@@ -140,10 +141,9 @@ def analyser():
         streamList = json.loads(a3)
         # starts the analysation by reloading the json in a different variable
         streamListLength = int((len(streamList)/5))
-        # streamList contains every single track from all the json files, this splits it into smaller chunks
+        # streamList contains every single track from all the json files, this splits it into 5 smaller chunks
         csvList = []
-        # this part is split into sections because large enough transfers were causing crashes and memory errors
-        print("CSV cleared, starting analyser \n")
+        print("CSV cleared, starting analyser. This may take a while. \n")
         #
         for stream in range(0,streamListLength):
             singleStream = streamList[stream]
@@ -316,7 +316,30 @@ def analyser():
 
 
 def mathematician():
-    print("Reforming data and calculating stats. This stage may take a while")
+    print("Reforming data and calculating final numbers.")
+    csvData = pd.read_csv('./Data/CSV/formatted.csv')
+    if Config.getboolean("Options", "tracknameenabled") == True:
+        # if the config is set to save tracks, but not episodes
+        csvGrouped = csvData.groupby(["Track", "Album"])
+        pd.concat(csvGrouped).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
+        # this doesn't actually work, the data type is a tuple, concat only works for series and dataframes
+
+    elif Config.getboolean("Options", "tracknameenabled") == False and Config.getboolean("Options", "episodesenabled") == True:
+        # if the config is set to save episodes, but not tracks
+        csvGroupedEpisodes = csvData.groupby(["Episode Name", "Show Name"])
+        pd.concat(csvGroupedEpisodes).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
+
+    elif Config.getboolean("Options", "tracknameenabled") == True and Config.getboolean("Options", "episodesenabled") == True:
+        # if the config is set to save both episodes and tracks
+        csvGroupedBoth = csvData.groupby(["Track", "Album", "Episode Name", "Show Name"])
+        pd.concat(csvGroupedBoth).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
+
+    elif Config.getboolean("Options", "tracknameenabled") == False and Config.getboolean("Options", "episodesenabled") == False:
+        # if the config has both episodes and tracks disabled (thus nothing to sort by)
+        print("Config file contains contradiction, please double-check that tracknameenabled and episodesenabled aren't both off and try again.")
+        raise SystemExit
+    
+
     # this is the part that takes all the data from the CSV and reformats it *again* into chartable data (combines song playtimes, time per day, time per month, time per album (basically just time per x))
 
 # basic idea is:
@@ -400,68 +423,109 @@ except FileExistsError:
 
 
 
-print("Your directory contains", os.listdir("./Data/"),"\n")
-# lists the elements inside the Data folder (user/debug info)
+# print("Your directory contains", os.listdir("./Data/"),"\n")
+# lists the elements inside the Data folder (user/debug info), disabled
 
 dataArray = os.listdir("./Data")
-# the directory information stored for the checks below
+# stores the directory for use later
 
-zips = [ax for ax in dataArray if ax.endswith("zip")]
-# checks the directory for files with .zip
+zips = [zipP for zipP in dataArray if zipP.endswith("zip")]
+# checks the directory for files with .zip, used to select the zip file
 
-Config = configparser.ConfigParser()
+Config = configparser.ConfigParser(comment_prefixes='/', allow_no_value=True, )
 Config.read('./config.ini')
+# this opens the config file, letting the program read it later on
+
+
+
+if Config.getboolean("FirstTimer", "firstTimeUser") == True:
+    print("Welcome, first time user! Here's some information regarding this tool: \n")
+    print("On the first run of this program, it will run through every step, since there is no intermediary data available.")
+    print("On subsequent runs, you will be able to skip steps depending on what you want to do with the streaming data.")
+    configInput = input("Have you configured the options in the config.ini file yet? Y/N")
+    if configInput == "Y" or configInput == "y":
+        print("Proceeding with configured options")
+        # processor()
+        # has selected desired options, starts data processing
+    elif configInput == "N" or configInput == "n":
+        defaults = input("Would you like to continue with default settings? Y/N:")
+        if defaults == "Y" or defaults == "y":
+            print("Proceeding with default options")
+            # processor()
+        elif defaults == "N" or defaults == "n":
+            print("Please go configure your desired options, then open the program again")
+            raise SystemExit
+            # could also find a way to GUI-interactively go through each setting to explain them
+    else:
+        print("Unknown command, please try again")
+        raise SystemExit
+    Config['FirstTimer']['firstTimeUser'] = 'False'
+    with open('./config.ini', 'w') as configFile:
+        Config.write(configFile)
+    # informs user on program usage and swaps the config file boolean to false, so the new user prompt doesn't show up again
+else:
+    None
+# quick check to see if this is the first time using program, gives info if yes
+
+
 
 if 'mySpotifyData.zip' in dataArray:
-    fileName = "mySpotifyData.zip"
+    path = "mySpotifyData.zip"
     print("Correct file found\n")
     # the first file in the directory is the correct zip file
-elif len(zips) == 1:
-    fileName = zips[0]
-    print("Attempting to use the misnamed zip file in the Data folder\n")
-elif len(zips) > 1 or len(zips) == 0:
-    prompt = tk.Tk(screenName="Multiple or no zip files found, please select the zip file manually")
-    prompt.withdraw()
-    fileName = filedialog.askopenfilename(title=("Please select your streaming history file"), filetypes=[("Zip", '*.zip')])
-    # there are multiple zip files in the directory, user has to choose one
+elif len(zips) > 0 or len(zips) == 1:
+    path = filedialog.askopenfilename(title=("Please select your streaming history file"), filetypes=[("Zip", '*.zip')])
+    # there is at least one zip file in the directory, user has to choose one
+elif len(zips) == 0:
+    print("No zip files found, please move it to the Data folder and try again")
+    raise SystemExit
 else:
-    print("Unknown error has occurred, please try again")
+    print("Unknown error has occurred with zip file selection, please check files and try again")
     raise SystemExit
 
-path = "./Data/" + fileName
-# combines the folder path to make the final path leading to the right file
 
 
-
-if os.path.exists('./Data/processed.json') == True and Config.getboolean("Function", "alwaysSkipProcessing") == False:
-    overwriteStatus = input('The data file already exists, do you want to overwrite it and begin processing? Y/N: ')
-    # checks if the processed.json file already exists and checks config status, warns user if yes
-    if overwriteStatus == "Y" or overwriteStatus == "y":
-        print("Overwriting. \n")
-        processor()
-        # if user wants to ignore previous data and re-process or process new data, starts processor
-    elif overwriteStatus == "N" or overwriteStatus == "n":
-        # user does not want to overwrite data, asking if skip processing altogether 
-        skipProcessor = input('Do you want to skip the processing and begin analysing? Y/N: ')
-        print("\n")
-        if skipProcessor == "Y" or skipProcessor == "y":
-            print("Analysing. \n")
+if os.path.exists('./Data/processed.json') == True:
+    if Config.getboolean("Function", "alwaysSkipProcessing") == True:
+        # if the config setting for skipping processor is on, prompts to skip to analyser
+        if Config.getboolean("Function", "alwaysSkipAnalysing") == True:
+            # if both the processing and analysing are set to skip, moves to math section
+            print("Skipping processing and analysing, starting stat thing")
+            mathematician()
+        else:
+            print("Skipping processing, starting analyser")
             analyser()
-            # user wants to skip processing but wants to analyse existing data
-        elif skipProcessor == "N" or skipProcessor == "n":
+        # if the config setting for skipping processor is on, 
+    elif Config.getboolean("Function", "alwaysSkipProcessing") == False:
+        overwriteStatus = input('The data file already exists, do you want to overwrite it and begin processing? Y/N: ')
+        # checks if the processed.json file already exists and checks config status, warns user if yes
+        if overwriteStatus == "Y" or overwriteStatus == "y":
+            print("Overwriting. \n")
+            processor()
+            # if user wants to ignore previous data and re-process or process new data, starts processor
+        elif overwriteStatus == "N" or overwriteStatus == "n":
+            # user does not want to overwrite data, asking if skip processing altogether 
+            skipProcessor = input('Do you want to skip the initial data processing? Y/N: ')
+            print("\n")
+            if skipProcessor == "Y" or skipProcessor == "y":
+                if Config.getboolean("Function", "alwaysSkipAnalysing") == True:
+                    print("Skipping analyser, ")
+                    mathematician()
+                    # anaylse skip is enabled in config, automatically enters math phase
+                else:
+                    print("Analysing. \n")
+                    analyser()
+                    # user wants to skip processing but wants to analyse existing data
+            elif skipProcessor == "N" or skipProcessor == "n":
+                raise SystemExit
+                # wants to not overwrite data, but doesn't want to skip processing either, exit
+        else: 
+            print("Unknown command, exiting. \n")
             raise SystemExit
-            # no usecase for now, exiting
-    else: 
-        print("Unknown command, exiting. \n")
-        raise SystemExit
-        # user did not follow prompts, exiting
+            # user did not follow prompts, exiting
 elif os.path.exists('./Data/processed.json') == False:
     processor()
-    # in case the file does not exist, skips prompts and starts processor
-elif Config.getboolean("Function", "alwaysSkipProcessing") == True:
-    print("Processing skip is enabled in config, skipping to analyse")
-    analyser()
-    # if the config setting for skipping processor is on, skips prompts and starts analyser
+    # in case the file does not exist, skips prompts and starts processor (first time or has no data)
 else:
     print("Unknown error occurred, please check files and try again")
     raise SystemExit
