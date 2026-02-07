@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import datetime
 import tkinter as tk
+from collections import Counter
 from tkinter import filedialog
 import configparser
 
@@ -33,6 +34,7 @@ def processor():
         # the base list of information to filter out
         if Config.getboolean("Options", "trackNameEnabled") == False:
             fields_to_remove.append("master_metadata_track_name")
+            fields_to_remove.append("master_metadata_album_album_name")
         else:
             None
         if Config.getboolean("Options", "timePlayedEnabled") == False:
@@ -47,10 +49,6 @@ def processor():
             fields_to_remove.append("master_metadata_album_artist_name")
         else:
             None   
-        if Config.getboolean("Options", "albumNameEnabled") == False:
-            fields_to_remove.append("master_metadata_album_album_name")
-        else:
-            None
         if Config.getboolean("Options", "startReasonEnabled") == False:
             fields_to_remove.append("reason_start")
         else:
@@ -317,44 +315,20 @@ def analyser():
         mathematician()
         #
  
-
+def counter(fakeList):
+    return dict(Counter(list(pd.Series(fakeList).dropna())))
+    # a helper function that turns requested list into a pandas series to drop "nan" values, then turns back into a list
+    # is called by mathematician to dynamically count the grouped data's aggregate values
 
 def mathematician():
     print("Combining indices and calculating final numbers.")
     csvData = pd.read_csv('./Data/CSV/formatted.csv')
     if Config.getboolean("Options", "tracknameenabled") == True and Config.getboolean("Options", "episodesenabled") == False:
         # if the config is set to save tracks, but not episodes
-        csvGrouped = csvData.groupby(["Track", "Artist", "Album"]).agg({"Duration": sum, "Date": list, "Time": list, "Start Reason": list, "End Reason": list, "Shuffle": list, "Skipped": list, "Username": list, "Platform": list, "URL": list, "Country": list, "User Agent": list, "Offline": list, "Incognito": list})
-        # combines all occurances of a song that has the same name, artist and album into one, creates a list for most pieces of info, except duration, which it sums up (as milliseconds)
-        print(csvGrouped)
-        # prints the whole sorted matrix of data
-        # next to clean up all the "nan"s from the individual data
-        csvRows = csvGrouped.shape[0]
-        print(csvRows)
-        shuffleArray = []
-        for i in range (0, csvRows):
-            shuffleRaw = csvGrouped["Shuffle"].values[i]
-            shuffleArray.append(shuffleRaw.count("True"))
-        print(shuffleArray)
-            # csvGrouped.at[i, "Shuffle"].replace(shuffleCount)
-            # csvGrouped["Shuffle"].value_counts(dropna=True)
+        csvGrouped = csvData.groupby(["Track", "Artist", "Album"]).agg({"Duration": sum, "Date": list, "Time": list, "Start Reason": counter, "End Reason": counter, "Shuffle": counter, "Skipped": counter, "Username": counter, "Platform": counter, "URL": counter, "Country": counter, "User Agent": counter, "Offline": counter, "Incognito": counter})
+        # combines all occurances of a song that has the same name, artist and album into one - creates a dictionary for most pieces of info, except duration, which it sums up (as milliseconds)
 
-                # now just need to count all the lists to see how many times (e.g. offline, right now it's just a long list of [nan, nan, nan...], so I want to count how many nans there are (as well as how many other options - "true"?))
-        """
-                for i in range (0,9):
-                    tempVar = csvGrouped["Offline"].values[i]
-                    modVar = tempVar.count("True")
-                    print(modVar)
-                    csvGrouped["Offline"].values[i] = modVar
-                    print(csvGrouped["Offline"].values[i])
-                #for i in csvGrouped:
-                    # print(csvGrouped[i].count())
-                    # if .count() finds all the non-"nan" values, then surely the length of each "cell" minus the count is the false (for example, if a song is played 500 times and is offline twice, then len(offline)-.count = 498?)
-        """
-                # ^ kind of works? at least the first part, it can find all the values 
-        # counts = csvGrouped.value_counts(["Offline", "Skipped"])
-        # counts the amount of times certain strings appear (how many shuffles were on/off, how many skips, etc)
-            # print(tempArray)
+
         # pd.concat(csvGrouped).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
         
         # this doesn't actually work, the data type is a tuple, concat only works for series and dataframes
@@ -426,6 +400,7 @@ def charter():
 
 
 
+# file permission checker
 try:
     os.mkdir('Data')
 except FileExistsError:
@@ -435,29 +410,24 @@ except PermissionError:
     raise SystemExit
 # checks if the Data folder exists, makes one if not, and checks if it has write perms
 
-try:
-    os.mkdir('Data/CSV')
-except FileExistsError:
-    None
-# checks if the CSV subfolder exists, makes one if not
-
 
 
 # print("Your directory contains", os.listdir("./Data/"),"\n")
 # lists the elements inside the Data folder (user/debug info), disabled
 
 dataArray = os.listdir("./Data")
-# stores the directory for use later
+# stores the directory
 
 zips = [zipP for zipP in dataArray if zipP.endswith("zip")]
 # checks the directory for files with .zip, used to select the zip file
 
 Config = configparser.ConfigParser(comment_prefixes='/', allow_no_value=True, )
 Config.read('./config.ini')
-# this opens the config file, letting the program read it later on
+# this opens the config file to be checked later
 
 
 
+# first time user prompt
 if Config.getboolean("FirstTimer", "firstTimeUser") == True:
     print("Welcome, first time user! Here's some information regarding this tool: \n")
     print("On the first run of this program, it will run through every step, since there is no intermediary data available.")
@@ -489,10 +459,10 @@ if Config.getboolean("FirstTimer", "firstTimeUser") == True:
     # informs user on program usage and swaps the config file boolean to false, so the new user prompt doesn't show up again
 else:
     None
-# quick check to see if this is the first time using program, gives info if yes
 
 
 
+# zip file selector
 if 'mySpotifyData.zip' in dataArray:
     path = "mySpotifyData.zip"
     print("Correct file found\n")
@@ -500,24 +470,29 @@ if 'mySpotifyData.zip' in dataArray:
 elif len(zips) == 1:
     path = "./Data/" + zips[0]
     print("Using misnamed zip file")
+    # there is a zip file, but not named "mySpotifyData", uses that (may cause issues if a zip file of the wrong type is placed in the folder)
 elif len(zips) > 1:
     path = filedialog.askopenfilename(title=("Please select your streaming history file"), filetypes=[("Zip", '*.zip')])
-    # there is at least one zip file in the directory, user has to choose one
+    # there is more than one zip file in the directory, user has to choose one
 elif len(zips) == 0:
     print("No zip files found, please move it to the Data folder and try again")
     raise SystemExit
+    # no valid (zip) files in the Data folder
 else:
     print("Unknown error has occurred with zip file selection, please check files and try again")
     raise SystemExit
+    # shouldn't ever happen, but exits the program rather than erroring out
 
 
-
+# logic for determining which task should start
 if os.path.exists('./Data/processed.json') == True:
     if Config.getboolean("Function", "alwaysSkipProcessing") == True:
+        print("The config option to skip processing is enabled, skipping processing")
         # if the config setting for skipping processor is on, prompts to skip to analyser
         if Config.getboolean("Function", "alwaysSkipAnalysing") == True:
             # if both the processing and analysing are set to skip, moves to math section
-            print("Skipping processing and analysing, starting stat thing")
+            print("The config option to skip analyser is enabled, skipping analysing")
+            print("Starting math thing")
             mathematician()
         else:
             print("Skipping processing, starting analyser")
@@ -531,18 +506,23 @@ if os.path.exists('./Data/processed.json') == True:
             processor()
             # if user wants to ignore previous data and re-process or process new data, starts processor
         elif overwriteStatus == "N" or overwriteStatus == "n":
-            # user does not want to overwrite data, asking if skip processing altogether 
             skipProcessor = input('Do you want to skip the initial data processing? Y/N: ')
-            print("\n")
+            # user does not want to overwrite data, asking if skip processing altogether 
             if skipProcessor == "Y" or skipProcessor == "y":
                 if Config.getboolean("Function", "alwaysSkipAnalysing") == True:
-                    print("Skipping analyser, ")
+                    print("Skipping processing and analysing, starting mathematician")
                     mathematician()
-                    # anaylse skip is enabled in config, automatically enters math phase
+                    # anaylser skip is enabled in config, automatically enters math phase
                 else:
-                    print("Analysing. \n")
-                    analyser()
-                    # user wants to skip processing but wants to analyse existing data
+                    skipAnalyser = input('Do you want to skip the data analysation and start data reformatting? Y/N:')
+                    if skipAnalyser == "Y" or skipAnalyser == "y":
+                        print("Skipping processing and analysing, starting mathematician")
+                        mathematician()
+                        # manual method to skip processing and analysing via input chain
+                    else:
+                        print("Analysing. \n")
+                        analyser()
+                        # user wants to skip processing but wants to analyse existing data
             elif skipProcessor == "N" or skipProcessor == "n":
                 raise SystemExit
                 # wants to not overwrite data, but doesn't want to skip processing either, exit
@@ -552,7 +532,8 @@ if os.path.exists('./Data/processed.json') == True:
             # user did not follow prompts, exiting
 elif os.path.exists('./Data/processed.json') == False:
     processor()
-    # in case the file does not exist, skips prompts and starts processor (first time or has no data)
+    # in case the file does not exist, skips prompts and starts processor (first time or has no processed data)
 else:
     print("Unknown error occurred, please check files and try again")
     raise SystemExit
+    # shouldn't ever happen, but exits the program rather than erroring out
