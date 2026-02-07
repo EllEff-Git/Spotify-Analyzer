@@ -159,7 +159,7 @@ def analyser():
             singleStreamStart = singleStream.get("reason_start")
             singleStreamEnd = singleStream.get("reason_end")
             singleStreamShuffle = singleStream.get("shuffle")
-            singleStreamSkip = singleStream.get("skip")
+            singleStreamSkip = singleStream.get("skipped")
             singleStreamUser = singleStream.get("username")
             singleStreamPlatform = singleStream.get("platform")
             singleStreamURL = singleStream.get("spotify_track_uri")
@@ -172,7 +172,7 @@ def analyser():
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
             csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
-            # appends all the information into columns       
+            # appends all the information into a list       
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=True)
         csvList.clear()
         # clears the list so it doesn't get double-dipped
@@ -182,6 +182,7 @@ def analyser():
         #
         for stream in range((streamListLength+1),(streamListLength*2)):
         # repeats the process for 20%+1 to 40% 
+            singleStream = streamList[stream]
             singleStreamName = singleStream.get("master_metadata_track_name")
             singleStreamPlaytime = singleStream.get("ms_played")
             singleStreamTimestamp = singleStream.get("ts")
@@ -193,7 +194,7 @@ def analyser():
             singleStreamStart = singleStream.get("reason_start")
             singleStreamEnd = singleStream.get("reason_end")
             singleStreamShuffle = singleStream.get("shuffle")
-            singleStreamSkip = singleStream.get("skip")
+            singleStreamSkip = singleStream.get("skipped")
             singleStreamUser = singleStream.get("username")
             singleStreamPlatform = singleStream.get("platform")
             singleStreamURL = singleStream.get("spotify_track_uri")
@@ -206,7 +207,7 @@ def analyser():
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
             csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
-            # appends all the information into columns
+            # appends all the information into a list
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
         print("40%")
@@ -215,6 +216,7 @@ def analyser():
         #
         for stream in range(((streamListLength*2)+1),(streamListLength*3)):
         # repeats the process for 40%+1 to 60% 
+            singleStream = streamList[stream]
             singleStreamName = singleStream.get("master_metadata_track_name")
             singleStreamPlaytime = singleStream.get("ms_played")
             singleStreamTimestamp = singleStream.get("ts")
@@ -226,7 +228,7 @@ def analyser():
             singleStreamStart = singleStream.get("reason_start")
             singleStreamEnd = singleStream.get("reason_end")
             singleStreamShuffle = singleStream.get("shuffle")
-            singleStreamSkip = singleStream.get("skip")
+            singleStreamSkip = singleStream.get("skipped")
             singleStreamUser = singleStream.get("username")
             singleStreamPlatform = singleStream.get("platform")
             singleStreamURL = singleStream.get("spotify_track_uri")
@@ -239,7 +241,7 @@ def analyser():
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
             csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
-            # appends all the information into columns
+            # appends all the information into a list
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
         print("60%")
@@ -247,7 +249,8 @@ def analyser():
         #
         #
         for stream in range(((streamListLength*3)+1),(streamListLength*4)):
-        # repeats the process for 60%+1 to 80% 
+        # repeats the process for 60%+1 to 80%
+            singleStream = streamList[stream] 
             singleStreamName = singleStream.get("master_metadata_track_name")
             singleStreamPlaytime = singleStream.get("ms_played")
             singleStreamTimestamp = singleStream.get("ts")
@@ -259,7 +262,7 @@ def analyser():
             singleStreamStart = singleStream.get("reason_start")
             singleStreamEnd = singleStream.get("reason_end")
             singleStreamShuffle = singleStream.get("shuffle")
-            singleStreamSkip = singleStream.get("skip")
+            singleStreamSkip = singleStream.get("skipped")
             singleStreamUser = singleStream.get("username")
             singleStreamPlatform = singleStream.get("platform")
             singleStreamURL = singleStream.get("spotify_track_uri")
@@ -272,7 +275,7 @@ def analyser():
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
             csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
-            # appends all the information into columns        
+            # appends all the information into a list        
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
         print("80%")
@@ -281,6 +284,7 @@ def analyser():
         #
         for stream in range(((streamListLength*4)+1),(len(streamList))):
         # repeats the process for 80%+1 to 100% 
+            singleStream = streamList[stream]
             singleStreamName = singleStream.get("master_metadata_track_name")
             singleStreamPlaytime = singleStream.get("ms_played")
             singleStreamTimestamp = singleStream.get("ts")
@@ -292,7 +296,7 @@ def analyser():
             singleStreamStart = singleStream.get("reason_start")
             singleStreamEnd = singleStream.get("reason_end")
             singleStreamShuffle = singleStream.get("shuffle")
-            singleStreamSkip = singleStream.get("skip")
+            singleStreamSkip = singleStream.get("skipped")
             singleStreamUser = singleStream.get("username")
             singleStreamPlatform = singleStream.get("platform")
             singleStreamURL = singleStream.get("spotify_track_uri")
@@ -305,7 +309,7 @@ def analyser():
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
             csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
-            # appends all the information into columns        
+            # appends all the information into a list        
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
         print("Analysing complete \n")
@@ -316,14 +320,48 @@ def analyser():
 
 
 def mathematician():
-    print("Reforming data and calculating final numbers.")
+    print("Combining indices and calculating final numbers.")
     csvData = pd.read_csv('./Data/CSV/formatted.csv')
-    if Config.getboolean("Options", "tracknameenabled") == True:
+    if Config.getboolean("Options", "tracknameenabled") == True and Config.getboolean("Options", "episodesenabled") == False:
         # if the config is set to save tracks, but not episodes
-        csvGrouped = csvData.groupby(["Track", "Album"])
-        pd.concat(csvGrouped).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
-        # this doesn't actually work, the data type is a tuple, concat only works for series and dataframes
+        csvGrouped = csvData.groupby(["Track", "Artist", "Album"]).agg({"Duration": sum, "Date": list, "Time": list, "Start Reason": list, "End Reason": list, "Shuffle": list, "Skipped": list, "Username": list, "Platform": list, "URL": list, "Country": list, "User Agent": list, "Offline": list, "Incognito": list})
+        # combines all occurances of a song that has the same name, artist and album into one, creates a list for most pieces of info, except duration, which it sums up (as milliseconds)
+        print(csvGrouped)
+        # prints the whole sorted matrix of data
+        # next to clean up all the "nan"s from the individual data
+        csvRows = csvGrouped.shape[0]
+        print(csvRows)
+        shuffleArray = []
+        for i in range (0, csvRows):
+            shuffleRaw = csvGrouped["Shuffle"].values[i]
+            shuffleArray.append(shuffleRaw.count("True"))
+        print(shuffleArray)
+            # csvGrouped.at[i, "Shuffle"].replace(shuffleCount)
+            # csvGrouped["Shuffle"].value_counts(dropna=True)
 
+                # now just need to count all the lists to see how many times (e.g. offline, right now it's just a long list of [nan, nan, nan...], so I want to count how many nans there are (as well as how many other options - "true"?))
+        """
+                for i in range (0,9):
+                    tempVar = csvGrouped["Offline"].values[i]
+                    modVar = tempVar.count("True")
+                    print(modVar)
+                    csvGrouped["Offline"].values[i] = modVar
+                    print(csvGrouped["Offline"].values[i])
+                #for i in csvGrouped:
+                    # print(csvGrouped[i].count())
+                    # if .count() finds all the non-"nan" values, then surely the length of each "cell" minus the count is the false (for example, if a song is played 500 times and is offline twice, then len(offline)-.count = 498?)
+        """
+                # ^ kind of works? at least the first part, it can find all the values 
+        # counts = csvGrouped.value_counts(["Offline", "Skipped"])
+        # counts the amount of times certain strings appear (how many shuffles were on/off, how many skips, etc)
+            # print(tempArray)
+        # pd.concat(csvGrouped).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
+        
+        # this doesn't actually work, the data type is a tuple, concat only works for series and dataframes
+    else:
+        print("Failed at some point, fix this")
+        # currently commented other options, will write this first
+"""
     elif Config.getboolean("Options", "tracknameenabled") == False and Config.getboolean("Options", "episodesenabled") == True:
         # if the config is set to save episodes, but not tracks
         csvGroupedEpisodes = csvData.groupby(["Episode Name", "Show Name"])
@@ -338,16 +376,15 @@ def mathematician():
         # if the config has both episodes and tracks disabled (thus nothing to sort by)
         print("Config file contains contradiction, please double-check that tracknameenabled and episodesenabled aren't both off and try again.")
         raise SystemExit
-    
+"""
 
     # this is the part that takes all the data from the CSV and reformats it *again* into chartable data (combines song playtimes, time per day, time per month, time per album (basically just time per x))
 
 # basic idea is:
 # you have a song, x, which comes from album y
 # you add it to a list with some array function, listing all its properties (ms_played, time, date...)
-# if x AND y already exist, it instead adds up the properties (ms_played = ms_played + ms_played type, for others it should not count the times (artist should always be same, if you cross-check album and song, it can't be a different one,
-# but count start reasons, end reasons, list all the dates))
-# it should look something like 
+# if x AND y already exist, it instead adds up the properties (ms_played = ms_played + ms_played type, for others it should not count the times (artist should always be same, if you cross-check album and song, it can't be a different one)
+# count start reasons, end reasons, shuffles, skips... also list all the times and dates))
 
 # basically have to make a list of a list, where each sublist is a song of its own, sorted by name + album
 """
@@ -357,10 +394,10 @@ Album Y
 Time Listened to: 5399214ms (then convert to s later, to get more consistent results (I imagine statsFM does the opposite, leading to insane rounding errors)
 Start Reasons: 21x A, 14x B, 9x C
 End Reasons: 30x D, 5x E, 1x F
-Shuffles: 50x Yes, 10x No
-Skip: 39x Yes, 29x No
-Username: just count if it has any different ones
-Platform: ^
+Shuffles: 50x Yes
+Skip: 39x Yes
+Username: just count if it has any different ones (unique)
+Platform: (unique)
 episode name (same as song name, shouldn't ever duplicate?), can check if the boolean is on whether to even activate
 url (only list once, should always be the same?)
 episode url (^)
@@ -369,28 +406,11 @@ offline: count I guess (if 0 then ignore)
 incognito: ^
 
 
-something like
-if song == existing song
-    if song's album == new
-        make a new input into list
-    if song's album == exists with that song
-        add it to the list
 
-
-"""
-
-# def charter():
-# the final function that draws charts
-# now that the CSV works, maybe next it's time for data cleanup
-
-
-# next to-do:
-# ex. take all the streams from 2019 and add up the ms_played
-# another thing is to find a way to do "unique:" (counter) and then sort the streams into number of x (times listened to, artist appearance, album...)
-# next is time per action (per artist, per album)
-# then to chart it all in some pretty way
+def charter():
+# the final function that draws charts from the finalised data
     
-"""
+
         postMath = input("CSV math is complete, do you wish to continue to charting? Y/N: ")
         if postMath == "Y" or postMath == "y":
             mathematician()
@@ -442,7 +462,7 @@ if Config.getboolean("FirstTimer", "firstTimeUser") == True:
     print("Welcome, first time user! Here's some information regarding this tool: \n")
     print("On the first run of this program, it will run through every step, since there is no intermediary data available.")
     print("On subsequent runs, you will be able to skip steps depending on what you want to do with the streaming data.")
-    configInput = input("Have you configured the options in the config.ini file yet? Y/N")
+    configInput = input("Have you configured your desired options in the config.ini file? Y/N")
     if configInput == "Y" or configInput == "y":
         print("Proceeding with configured options")
         # processor()
@@ -456,6 +476,10 @@ if Config.getboolean("FirstTimer", "firstTimeUser") == True:
             print("Please go configure your desired options, then open the program again")
             raise SystemExit
             # could also find a way to GUI-interactively go through each setting to explain them
+            # for example:
+            # "shuffleEnabled"
+            # can be true or false
+            # determines if the shuffle state is saved
     else:
         print("Unknown command, please try again")
         raise SystemExit
@@ -473,7 +497,10 @@ if 'mySpotifyData.zip' in dataArray:
     path = "mySpotifyData.zip"
     print("Correct file found\n")
     # the first file in the directory is the correct zip file
-elif len(zips) > 0 or len(zips) == 1:
+elif len(zips) == 1:
+    path = "./Data/" + zips[0]
+    print("Using misnamed zip file")
+elif len(zips) > 1:
     path = filedialog.askopenfilename(title=("Please select your streaming history file"), filetypes=[("Zip", '*.zip')])
     # there is at least one zip file in the directory, user has to choose one
 elif len(zips) == 0:
