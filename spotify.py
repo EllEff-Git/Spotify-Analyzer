@@ -4,16 +4,85 @@ import json
 import numpy as np
 import pandas as pd
 import datetime
+import queue
 import tkinter as tk
-from collections import Counter
+from tkinter import *
 from tkinter import filedialog
+from tkinter import ttk
+from collections import Counter
+import threading
 import configparser
+from window import GUIWindow
+from progress import progressReporter
 
 
+# logic for determining which task should start
+def startuptask(task, progressReporter):
+    if task == "processor":
+        processor(progressReporter)
+    if task == "analyser":
+        analyser(progressReporter)
+    if task == "mathematician":
+        mathematician(progressReporter)
+    if task == "charter":
+        raise SystemExit
+    """
+    elif os.path.exists('./Data/processed.json') == True:
+        if Config.getboolean("Function", "alwaysSkipProcessing") == True:
+            print("The config option to skip processing is enabled, skipping processing")
+            # if the config setting for skipping processor is on, prompts to skip to analyser
+            if Config.getboolean("Function", "alwaysSkipAnalysing") == True:
+                # if both the processing and analysing are set to skip, moves to math section
+                print("The config option to skip analyser is enabled, skipping analysing")
+                print("Starting math thing")
+                mathematician(progressReporter)
+            elif Config.getboolean("Function", "alwaysSkipAnalysing") == False:
+                # if the config setting for skipping processor is on, but the analysation setting is off, starts analyser
+                print("Skipping processing, starting analyser")
+                analyser(progressReporter)
+        elif Config.getboolean("Function", "alwaysSkipProcessing") == False:
+            overwriteStatus = input('The data file already exists, do you want to overwrite it and begin processing? Y/N: ')
+            # checks if the processed.json file already exists and checks config status, warns user if yes
+            if overwriteStatus == "Y" or overwriteStatus == "y":
+                print("Overwriting. \n")
+                processor(progressReporter)
+                # if user wants to ignore previous data and re-process or process new data, starts processor
+            elif overwriteStatus == "N" or overwriteStatus == "n":
+                skipProcessor = input('Do you want to skip the initial data processing? Y/N: ')
+                # user does not want to overwrite data, asking if skip processing altogether 
+                if skipProcessor == "Y" or skipProcessor == "y":
+                    if Config.getboolean("Function", "alwaysSkipAnalysing") == True:
+                        print("Skipping processing and analysing, starting mathematician")
+                        mathematician(progressReporter)
+                        # anaylser skip is enabled in config, automatically enters math phase
+                    else:
+                        skipAnalyser = input('Do you want to skip the data analysation and start data reformatting? Y/N:')
+                        if skipAnalyser == "Y" or skipAnalyser == "y":
+                            print("Skipping processing and analysing, starting mathematician")
+                            mathematician(progressReporter)
+                            # manual method to skip processing and analysing via input chain
+                        else:
+                            print("Analysing. \n")
+                            analyser(progressReporter)
+                            # user wants to skip processing but wants to analyse existing data
+                elif skipProcessor == "N" or skipProcessor == "n":
+                    raise SystemExit
+                    # wants to not overwrite data, but doesn't want to skip processing either, exit
+            else: 
+                print("Unknown command, exiting. \n")
+                raise SystemExit
+                # user did not follow prompts, exiting
+    elif os.path.exists('./Data/processed.json') == False:
+        processor(progressReporter)
+        # in case the file does not exist, skips prompts and starts processor (first time or has no processed data)
+    else:
+        print("Unknown error occurred, please check files and try again")
+        raise SystemExit
+        # shouldn't ever happen, but exits the program rather than erroring out
+    """
 
 
-
-def processor():
+def processor(progressReporter):
     with zipfile.ZipFile(path, 'r') as dataFiles:
         # need to get rid of or ignore pdf + video file probably here, since it's where the zip is first opened
         names = dataFiles.namelist()
@@ -21,7 +90,6 @@ def processor():
         # excludes all the files that don't end in .json
         jsonNames.sort()
         # poorly sorts the files (since it goes alphabetically, - comes before _, so e.g 2019-2020 is processed before 2019_)
-        progress = 0
         output = []
         # creates a progress counter and a list for the outputs to go
         # should write an if statement here that skips the whole processing part for testing and in case I want to use the data without re-formatting it
@@ -102,17 +170,21 @@ def processor():
             fields_to_remove.append("incognito_mode")
         else:
             None
-        # adds all the configurable options into the removeable fields list
+        # changes which fields are removed based on configurable options
+        total = len(names)
+        progress = 1
         for name in jsonNames:
+            progress = progress + 1
             # picks a file from the list of json files
             content = dataFiles.read(name)
             # reads the file
             parsedData = json.loads(content)
             # picks out the data from the read file
-            progress = progress + 1
-            print("Current file:", (name.split("/"))[1], "\n")
-            print("Progress is at", progress, "/", len(jsonNames),"\n")
-            # counter and file name to visualise progress
+            progressReporter(GUIWindow.fileNameReporter, "processed", name)
+            # sends progress updates to help visualise
+            percent = int(progress / total * 100)
+            progressReporter(GUIWindow.percentageProgress, "done", percent)
+            # sends percentage progress to help visualise
             for stream in parsedData:
                 for field in fields_to_remove:
                     stream.pop(field, None)                    
@@ -123,14 +195,15 @@ def processor():
             json.dump(output, a2, ensure_ascii=True, indent=0)
                 # takes all the streams in 'output' and dumps them into the 'processed.json' file
         print("Processing complete, beginning analysing \n")
-        analyser()
+        raise SystemExit
+        # analyser(progressReporter)
         # calls the analyser to start the next step
 
 
 
-def analyser():
+def analyser(progressReporter):
     # the is split into sections because large enough transfers were causing crashes and memory errors (and it took so long it seemed like it'd stalled)
-    print("Clearing temp CSV file")
+    print("Clearing CSV file")
     csvEmptier = open('./Data/CSV/formatted.csv', 'w')
     csvEmptier.truncate()
     csvEmptier.close()
@@ -312,7 +385,7 @@ def analyser():
         csvList.clear()
         print("Analysing complete \n")
         #
-        mathematician()
+        mathematician(progressReporter)
         #
  
 def counter(fakeList):
@@ -320,22 +393,36 @@ def counter(fakeList):
     # a helper function that turns requested list into a pandas series to drop "nan" values, then turns back into a list
     # is called by mathematician to dynamically count the grouped data's aggregate values
 
-def mathematician():
+def mathematician(progressReporter):
     print("Combining indices and calculating final numbers.")
     csvData = pd.read_csv('./Data/CSV/formatted.csv')
     if Config.getboolean("Options", "tracknameenabled") == True and Config.getboolean("Options", "episodesenabled") == False:
         # if the config is set to save tracks, but not episodes
-        csvGrouped = csvData.groupby(["Track", "Artist", "Album"]).agg({"Duration": sum, "Date": list, "Time": list, "Start Reason": counter, "End Reason": counter, "Shuffle": counter, "Skipped": counter, "Username": counter, "Platform": counter, "URL": counter, "Country": counter, "User Agent": counter, "Offline": counter, "Incognito": counter})
-        # combines all occurances of a song that has the same name, artist and album into one - creates a dictionary for most pieces of info, except duration, which it sums up (as milliseconds)
-
-
-        # pd.concat(csvGrouped).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
+        csvGrouped = csvData.groupby(["Track", "Artist", "Album"]).agg({"Duration": list, "Date": list, "Time": list, "Start Reason": counter, "End Reason": counter, "Shuffle": counter, "Skipped": counter, "Username": counter, "Platform": counter, "URL": counter, "Country": counter, "User Agent": counter, "Offline": counter, "Incognito": counter})
+        # combines all occurances of a track that has the same name, artist and album into one - creates a dictionary for most pieces of info, except duration, which it sums up (as milliseconds)
+        print("CSV data grouped, calculating playcounts")
+        playcountList = []
+        for i, x in csvGrouped.iterrows():
+            # i contains the actual "identifier" of the track (track, artist, album)
+            playdates = csvGrouped.loc[i, "Date"]
+            # takes the list of dates for each track
+            playcount = len(playdates)
+            # stores the length of each track's date list (easy way to count playcount)
+            playcountList.append(playcount)
+            # adds the playcount into the list
+        csvGrouped.insert(0, "Playcount", playcountList)
+        # after all tracks are done and the for loop ends, inserts a new column containing the playcount for each track
+        csvGrouped.to_csv('./Data/CSV/grouped.csv', index=True)
+        # pushes the whole modified dataframe into a csv file
+        print("Playcounts calculated, data stored.")
         
+"""
+        # pd.concat(csvGrouped).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
         # this doesn't actually work, the data type is a tuple, concat only works for series and dataframes
     else:
         print("Failed at some point, fix this")
         # currently commented other options, will write this first
-"""
+    
     elif Config.getboolean("Options", "tracknameenabled") == False and Config.getboolean("Options", "episodesenabled") == True:
         # if the config is set to save episodes, but not tracks
         csvGroupedEpisodes = csvData.groupby(["Episode Name", "Show Name"])
@@ -352,7 +439,14 @@ def mathematician():
         raise SystemExit
 """
 
-    # this is the part that takes all the data from the CSV and reformats it *again* into chartable data (combines song playtimes, time per day, time per month, time per album (basically just time per x))
+
+def summary(progressReporter):
+    if os.path.exists('./Data/CSV/formatted.csv'):
+        csvData = pd.read_csv('./Data/CSV/formatted.csv')
+        csvData
+        # this takes the grouped data and makes a quick summary (top 10/50 songs, total playtime, playtime per month?)
+        # playtime per timeperiod requires something where it finds the year/month and then stores the list number, then takes all the playtime for those indices
+
 
 # basic idea is:
 # you have a song, x, which comes from album y
@@ -467,13 +561,16 @@ if 'mySpotifyData.zip' in dataArray:
     path = "mySpotifyData.zip"
     print("Correct file found\n")
     # the first file in the directory is the correct zip file
+    # startuptask(progressReporter)
 elif len(zips) == 1:
     path = "./Data/" + zips[0]
     print("Using misnamed zip file")
     # there is a zip file, but not named "mySpotifyData", uses that (may cause issues if a zip file of the wrong type is placed in the folder)
+    # startuptask(task, progressReporter)
 elif len(zips) > 1:
     path = filedialog.askopenfilename(title=("Please select your streaming history file"), filetypes=[("Zip", '*.zip')])
     # there is more than one zip file in the directory, user has to choose one
+    # startuptask(progressReporter)
 elif len(zips) == 0:
     print("No zip files found, please move it to the Data folder and try again")
     raise SystemExit
@@ -484,56 +581,9 @@ else:
     # shouldn't ever happen, but exits the program rather than erroring out
 
 
-# logic for determining which task should start
-if os.path.exists('./Data/processed.json') == True:
-    if Config.getboolean("Function", "alwaysSkipProcessing") == True:
-        print("The config option to skip processing is enabled, skipping processing")
-        # if the config setting for skipping processor is on, prompts to skip to analyser
-        if Config.getboolean("Function", "alwaysSkipAnalysing") == True:
-            # if both the processing and analysing are set to skip, moves to math section
-            print("The config option to skip analyser is enabled, skipping analysing")
-            print("Starting math thing")
-            mathematician()
-        else:
-            print("Skipping processing, starting analyser")
-            analyser()
-        # if the config setting for skipping processor is on, 
-    elif Config.getboolean("Function", "alwaysSkipProcessing") == False:
-        overwriteStatus = input('The data file already exists, do you want to overwrite it and begin processing? Y/N: ')
-        # checks if the processed.json file already exists and checks config status, warns user if yes
-        if overwriteStatus == "Y" or overwriteStatus == "y":
-            print("Overwriting. \n")
-            processor()
-            # if user wants to ignore previous data and re-process or process new data, starts processor
-        elif overwriteStatus == "N" or overwriteStatus == "n":
-            skipProcessor = input('Do you want to skip the initial data processing? Y/N: ')
-            # user does not want to overwrite data, asking if skip processing altogether 
-            if skipProcessor == "Y" or skipProcessor == "y":
-                if Config.getboolean("Function", "alwaysSkipAnalysing") == True:
-                    print("Skipping processing and analysing, starting mathematician")
-                    mathematician()
-                    # anaylser skip is enabled in config, automatically enters math phase
-                else:
-                    skipAnalyser = input('Do you want to skip the data analysation and start data reformatting? Y/N:')
-                    if skipAnalyser == "Y" or skipAnalyser == "y":
-                        print("Skipping processing and analysing, starting mathematician")
-                        mathematician()
-                        # manual method to skip processing and analysing via input chain
-                    else:
-                        print("Analysing. \n")
-                        analyser()
-                        # user wants to skip processing but wants to analyse existing data
-            elif skipProcessor == "N" or skipProcessor == "n":
-                raise SystemExit
-                # wants to not overwrite data, but doesn't want to skip processing either, exit
-        else: 
-            print("Unknown command, exiting. \n")
-            raise SystemExit
-            # user did not follow prompts, exiting
-elif os.path.exists('./Data/processed.json') == False:
-    processor()
-    # in case the file does not exist, skips prompts and starts processor (first time or has no processed data)
-else:
-    print("Unknown error occurred, please check files and try again")
-    raise SystemExit
-    # shouldn't ever happen, but exits the program rather than erroring out
+
+if __name__ == "__main__":
+    gui = GUIWindow()
+
+    threading.Thread(target=startuptask, args=(gui.queue.put), daemon=True).start()
+    gui.run()
