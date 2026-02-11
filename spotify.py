@@ -1,18 +1,12 @@
-import zipfile
-import os
-import json
+import zipfile, os, json, datetime, queue, threading, configparser
 import numpy as np
 import pandas as pd
-import datetime
-import queue
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
 from collections import Counter
-import threading
-import configparser
-from window import GUIWindow
+from windowOLD import GUIWindow, InputWindow
 from progress import progressReporter
 
 
@@ -195,9 +189,8 @@ def processor(progressReporter):
             json.dump(output, a2, ensure_ascii=True, indent=0)
                 # takes all the streams in 'output' and dumps them into the 'processed.json' file
         print("Processing complete, beginning analysing \n")
-        raise SystemExit
-        # analyser(progressReporter)
-        # calls the analyser to start the next step
+        InputWindow()
+        # finishes work and calls inputwindow
 
 
 
@@ -207,6 +200,7 @@ def analyser(progressReporter):
     csvEmptier = open('./Data/CSV/formatted.csv', 'w')
     csvEmptier.truncate()
     csvEmptier.close()
+    # opens the csv, writes nothing (effectively deleting everything), then closing the file
     with open('./Data/processed.json', 'r') as processedStreams:
         a3 = processedStreams.read()
         streamList = json.loads(a3)
@@ -242,7 +236,7 @@ def analyser(progressReporter):
             singleStreamOffline = singleStream.get("offline")
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime], "Total Time": [singleStreamPlaytime], "Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
             # appends all the information into a list       
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=True)
         csvList.clear()
@@ -277,7 +271,7 @@ def analyser(progressReporter):
             singleStreamOffline = singleStream.get("offline")
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime], "Total Time": [singleStreamPlaytime], "Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
             # appends all the information into a list
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
@@ -311,7 +305,7 @@ def analyser(progressReporter):
             singleStreamOffline = singleStream.get("offline")
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime], "Total Time": [singleStreamPlaytime], "Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
             # appends all the information into a list
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
@@ -345,7 +339,7 @@ def analyser(progressReporter):
             singleStreamOffline = singleStream.get("offline")
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime], "Total Time": [singleStreamPlaytime], "Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
             # appends all the information into a list        
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
@@ -379,13 +373,14 @@ def analyser(progressReporter):
             singleStreamOffline = singleStream.get("offline")
             singleStreamIncognito = singleStream.get("incognito_mode")
             # splits each element into its own variable, to keep lines shorter (vertical > horizontal) in this function, it "skips" empty data in the sense that it adds a column forcebly, but not the data (leaves that column empty)
-            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime],"Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
+            csvList.append(pd.DataFrame({"Track":[singleStreamName],"Duration":[singleStreamPlaytime],"Date":[singleStreamDate], "Time": [singleStreamTime], "Total Time": [singleStreamPlaytime], "Artist":[singleStreamArtist],"Album":[singleStreamAlbum],"Start Reason":[singleStreamStart],"End Reason":[singleStreamEnd],"Shuffle":[singleStreamShuffle],"Skipped":[singleStreamSkip],"Username":[singleStreamUser],"Platform":[singleStreamPlatform], "URL": [singleStreamURL], "Show Name": [singleStreamShow], "Episode Name": [singleStreamEp], "E-URL":[singleStreamEpURL], "Country":[singleStreamCountry], "User Agent":[singleStreamAgent], "Offline":[singleStreamOffline], "Incognito":[singleStreamIncognito]}))
             # appends all the information into a list        
         pd.concat(csvList).to_csv("./Data/CSV/formatted.csv", mode='a', index=False, header=False)
         csvList.clear()
         print("Analysing complete \n")
         #
-        mathematician(progressReporter)
+        InputWindow()
+        # mathematician(progressReporter)
         #
  
 def counter(fakeList):
@@ -398,7 +393,7 @@ def mathematician(progressReporter):
     csvData = pd.read_csv('./Data/CSV/formatted.csv')
     if Config.getboolean("Options", "tracknameenabled") == True and Config.getboolean("Options", "episodesenabled") == False:
         # if the config is set to save tracks, but not episodes
-        csvGrouped = csvData.groupby(["Track", "Artist", "Album"]).agg({"Duration": list, "Date": list, "Time": list, "Start Reason": counter, "End Reason": counter, "Shuffle": counter, "Skipped": counter, "Username": counter, "Platform": counter, "URL": counter, "Country": counter, "User Agent": counter, "Offline": counter, "Incognito": counter})
+        csvGrouped = csvData.groupby(["Track", "Artist", "Album"]).agg({"Duration": list, "Date": list, "Time": list, "Total Time": sum, "Start Reason": counter, "End Reason": counter, "Shuffle": counter, "Skipped": counter, "Username": counter, "Platform": counter, "URL": counter, "Country": counter, "User Agent": counter, "Offline": counter, "Incognito": counter})
         # combines all occurances of a track that has the same name, artist and album into one - creates a dictionary for most pieces of info, except duration, which it sums up (as milliseconds)
         print("CSV data grouped, calculating playcounts")
         playcountList = []
@@ -415,6 +410,7 @@ def mathematician(progressReporter):
         csvGrouped.to_csv('./Data/CSV/grouped.csv', index=True)
         # pushes the whole modified dataframe into a csv file
         print("Playcounts calculated, data stored.")
+    InputWindow()
         
 """
         # pd.concat(csvGrouped).to_csv("./Data/CSV/grouped.csv", mode='a', index=False, header=False)
@@ -581,9 +577,10 @@ else:
     # shouldn't ever happen, but exits the program rather than erroring out
 
 
-
+"""
 if __name__ == "__main__":
     gui = GUIWindow()
 
     threading.Thread(target=startuptask, args=(gui.queue.put), daemon=True).start()
     gui.run()
+"""

@@ -242,7 +242,7 @@ class InputWindow:
         branding.columnconfigure(0, weight=0)
         # a short branding in the bottom left corner
 
-        prompt = tk.Label(backgroundBlock, text="Please select the task to perform", background="#1e1e1e", foreground="white")
+        prompt = tk.Label(backgroundBlock, text="Please select a task", background="#1e1e1e", foreground="white")
         prompt.grid(row=0, column=2, sticky="ew", pady=20)
         # top prompt that just tells user to click a button
 

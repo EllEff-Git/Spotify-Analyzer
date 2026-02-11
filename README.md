@@ -11,7 +11,7 @@ https://elleffnotelf.com
 ```
 How to use:
 
-    1. Get your streaming history from Spotify via https://www.spotify.com/us/account/privacy/, 
+    1. Get your streaming history from Spotify via https://spotify.com/us/account/privacy/, 
                     or by going to your account details -> "Account Privacy"
         Scroll down all the way to the bottom
         Check the checkbox for "Extended Streaming History" and uncheck "Account Data"
