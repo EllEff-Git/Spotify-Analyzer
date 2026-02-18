@@ -4,7 +4,9 @@ Hi!
 This is a small python program to analyse Spotify streaming history data locally, with configurable options for processing :)
 
 
-https://elleffnotelf.com
+For installation and instructions:
+
+https://elleffnotelf.com/guides/Spotify-Analyser
 
 
 

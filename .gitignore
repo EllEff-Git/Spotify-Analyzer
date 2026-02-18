@@ -3,8 +3,11 @@
 !config.ini
 !main.py
 !README.md
+# files that should always be included
 
 todo.txt
 __pycache__
-windowOLD.py
-# temp files for testing/logging
+DSI
+SHA.ico
+SHA.xcf
+# temp files or test/log files
