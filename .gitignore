@@ -10,4 +10,9 @@ __pycache__
 DSI
 SHA.ico
 SHA.xcf
-# temp files or test/log files
+SHA.spec
+SHA.exe
+/dist
+/build
+/.venv
+# temp, test and/or log files

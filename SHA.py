@@ -1,12 +1,12 @@
-import zipfile, os, json, datetime, queue, threading, configparser, time
+import zipfile, os, json, datetime, configparser, time
 import numpy as np
 import pandas as pd
+import easygui
 import tkinter as tk
-from tkinter import *
-from tkinter import filedialog
-from tkinter import ttk
 from collections import Counter
 
+
+SHAver = "v0.19.2.0600"
 
 
 ### Raw JSON Processor ###
@@ -36,7 +36,7 @@ def processor():
             jsonEmptier.close()
             # opens, adds "nothing" and closes the processed file
 
-        print("Starting processing, should be done shortly \n")
+        print("Starting JSON processing, should be done shortly")
         # user inform
 
         fields_to_remove = ["ip_addr", "ip_addr_decrypted", "audiobook_title", "audiobook_uri", "audiobook_chapter_uri", "audiobook_chapter_title", "offline_timestamp", "conn_country"]
@@ -429,6 +429,7 @@ def charter():
             raise SystemExit
 """
 
+print(f"Starting Spotify (History) Analyser {SHAver}")
 
 
 ### Permission Check ###
@@ -461,6 +462,9 @@ Config = configparser.ConfigParser(comment_prefixes='/', allow_no_value=True)
 Config.read('./config.ini')
 # this opens the config file to be checked later
 
+gui = easygui
+# creates the file selection gui
+
 
 # Zip file selector
 if 'mySpotifyData.zip' in dataArray:
@@ -472,7 +476,7 @@ elif len(zips) == 1:
     print("Using misnamed zip file\n")
     # there is a zip file, but not named "mySpotifyData", uses that (may cause issues if a zip file of the wrong type is placed in the folder)
 elif len(zips) > 1:
-    zipPath = filedialog.askopenfilename(title=("Please select your streaming history file"), filetypes=[("Zip", "*.zip")])
+    zipPath = gui.fileopenbox(title=("Please select your streaming history file"), filetypes=["*.zip"])
     # there is more than one zip file in the directory, user has to choose one
 elif len(zips) == 0:
     print("No zip files found, please move it to the Data folder and try again\n")
@@ -548,6 +552,7 @@ elif not os.path.exists('./Data/processed.json'):
         # in case the file does not exist, and DSI is enabled
         print("No processed file found, DSI is enabled, processing data to fit DSI requirements")
         processor()
+
     else:
         print("No processed file found, starting program from the beginning")
         processor()
