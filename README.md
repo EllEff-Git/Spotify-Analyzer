@@ -6,17 +6,14 @@ SHA takes your Spotify Streaming History zip file from Spotify and churns out CS
 
 <br/>
 
-At the lowest level, it just grinds down the dozens of JSON files that Spotify sends out in the history file into a single JSON file (with some trimming). <br/>
-After that, it further trims down data according to the user configuration (included config file) and turns each individual stream into a human-readable CSV file <br/>
-The final stage takes all the individual streams and turns them into per-song statistics <br/>
+Stage 1: Grinds down the JSON files that Spotify sends out in the history file (could be as few as 3, up to dozens) into a single JSON file (with some trimming) <br/>
+Stage 2: Further trims down data according to the user configuration (via config file) and turns each individual stream into a human-readable CSV file<br/>
+Stage 3: The final stage takes all the individual streams and turns them into per-song statistics <br/>
+Stage 4: Provides a short, customisable summary of your listening habits. Planned feature: a tool that creates charts dynamically from source data <br/>
 
 <br/>
 
-The plan is to add further functionality, including a quick summary of data as well as a tool that automatically charts the data, but for now this tool exists as a servant to DSI.
-
-<br/>
-
-In large part, SHA was created as a data-processor just for DSI (Discord Spotify Integration), and by default, this is the way it processes the first launch (can be disabled in config).
+In large part, SHA was created as a data-processor just for DSI (Discord Spotify Integration), and this behavior can be toggled in the config.
 
 <br/>
 
