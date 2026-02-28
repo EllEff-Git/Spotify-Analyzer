@@ -1,4 +1,4 @@
-import zipfile, os, json, datetime, configparser, time
+import zipfile, os, json, datetime, configparser, time, ast
 import numpy as np
 import pandas as pd
 import easygui
@@ -6,7 +6,7 @@ import tkinter as tk
 from collections import Counter
 
 
-SHAver = "v0.28.2.0010"
+SHAver = "v0.28.2.0640"
 
 
 
@@ -460,9 +460,11 @@ def Stage4Summary():
     # sets up temp variables to call for dataFrame
 
     if topTracks == 1:
-        trackPrefix = "track"
+        trackPrefix = "Favorite track"
+    elif topTracks == 0:
+        trackPrefix = ""
     else:
-        trackPrefix = "tracks"    
+        trackPrefix = "Favorite tracks"    
     
     if topType == "Time" or topType == "time":
         # if the config calls for playtime
@@ -531,9 +533,11 @@ def Stage4Summary():
         # sets up temp variables for string constructors
 
         if topArtists == 1:
-            artistPrefix = "Artist"
+            artistPrefix = "Favorite Artist"
+        elif topArtists == 0:
+            artistPrefix = ""
         else:
-            artistPrefix = "Artists"
+            artistPrefix = "Favorite Artists"
 
         if topType == "Time" or topType == "time":
         # if the config calls for playtime
@@ -584,9 +588,11 @@ def Stage4Summary():
         # sets up temp variables for string constructors
 
         if topAlbums == 1:
-            albumPrefix = "Album"
+            albumPrefix = "Favorite Album"
+        elif topAlbums == 0:
+            albumPrefix = ""
         else:
-            albumPrefix = "Albums"
+            albumPrefix = "Favorite Albums"
 
         if topType == "Time" or topType == "time":
         # if the config calls for playtime
@@ -612,31 +618,154 @@ def Stage4Summary():
                 num += 1
                 # adds 1 to the number (ranking)   
 
+    csvYM = csvSum
+    # creates a separate dataframe form the existing csvSum (just because csvYM (Year Month) gets tweaked a lot)
+
+    csvYM["Date"] = csvYM["Date"].apply(ast.literal_eval)
+    # turns the column of dates in string format into lists
+
+    csvYM["Duration"] = csvYM["Duration"].apply(ast.literal_eval)
+    # turns the column of durations in string format into lists
+
+    allDates = [date for sublist in csvYM["Date"] for date in sublist]
+    # turns the individual lists per cell into a list of all the dates
+
+    csvYM = csvYM.explode(["Date", "Duration"])
+    # turns into a list of songs "exploded" by the dates and durations
+
+    csvYM["Date"] = pd.to_datetime(csvYM["Date"])
+    # ensures the dataframe now uses actual datetime format for the "date" column
+
+    csvYM["Duration"] = pd.to_numeric(csvYM["Duration"])
+    # ensures the dataframe now uses numbers for durations (shouldn't lead to "object" type errors)
+
+    earliestDate = min(allDates)
+    # gets the "lowest" (earliest) date from the megalist of dates
+
+    latestDate = max(allDates)
+    # gets the "highest" (latest) date from the megalist of dates
+
+    print(f"Track dates range from {earliestDate} to {latestDate}")
+    # user inform
 
     ### Top Months ###
 
-    ttTopMonths = int(Config.get("Summary", "top_Months"))
+    topMonthCount = int(Config.get("Summary", "top_Months"))
     # saves the config option for number of top months to get
 
-    if ttTopMonths >= 1:
+    if topMonthCount == 1:
+        monthPrefix = "Most listened to month"
+    elif topMonthCount == 0:
+        monthPrefix = ""
+    else:
+        monthPrefix = "Most listened to months"
+
+    if topMonthCount >= 1:
         # ensures there's at least one month to check the top list for
-        ttMaxMonth = 1
-        # see ttMaxYear explanation on what this needs
-        # saves the month that has the most playtime (unsure if should do *one* month or *a* month / as in May of 2025 vs May of all years)
-        topMonthType = Config.get("Summary", "top_Month_Type")
-        # the config option for how to sort months - each or total, each = every month is its own thing even across years
+
+        numberFormat = Config.get("Summary", "top_Month_Numbers").lower()
+        # the config option for what the numbers should be formatted by (hours or minutes)
+
+        topMonthType = Config.get("Summary", "top_Month_Type").lower()
+        # the config option for how to sort months - each or total, each = every month is its own thing even across years, total = that month across all years
+
+        if topMonthType == "each":
+            # if the config option is on "each" (counts each month of each year as its own entity)
+
+            monthDurations = csvYM.resample("MS", on="Date")["Duration"].sum()
+            # adds up all the song durations based on the date they were listened to
+
+            topMonths = monthDurations.nlargest(topMonthCount)
+            # finds the config-based number of largest (most listened to) months, turns into a series
+
+            num = 0
+            ttTopMonth = ""
+            # sets up temp variables
+
+            for month, duration in topMonths.items():
+                # repeats for every month in the top list
+
+                if numberFormat == "minutes":
+                    string = f"#{num+1}: {month.strftime("%B %Y")}\n     Listened for {duration/60000:,.1f} minutes\n"
+                else:
+                    string = f"#{num+1}: {month.strftime("%B %Y")}\n     Listened for {duration/360000:,.1f} hours\n"
+                    # creates a formatted string with each month in the top list based on config
+
+                ttTopMonth = f"{ttTopMonth}\n{string}"
+                # joins together the month strings and makes them new lines
+                num += 1
+                # adds 1 to the number (ranking)
+
+        if topMonthType == "total":
+            # if the config option is on "total" (counts all months together)
+
+            totalMonthDurations = csvYM.groupby(csvYM["Date"].dt.month)["Duration"].sum()
+            # groups by the months, calculates the total duration for each month
+            totalMonthDurations.index = pd.to_datetime(totalMonthDurations.index, format="%m").month_name()
+            # formats the months into their names, keeping the order
+
+            num = 0
+            ttTopMonth = ""
+            # sets up temp variables
+            
+            totalTopMonths = totalMonthDurations.nlargest(topMonthCount)
+            # finds the config-based number of largest (most listened to) months, turns into a series
+
+            for month, duration in totalTopMonths.items():
+                # repeats for every month in the top list
+
+                if numberFormat == "minutes":
+                    string = f"#{num+1}: {month}\n     Listened for {duration/60000:,.1f} minutes\n"
+                else:
+                    string = f"#{num+1}: {month}\n     Listened for {duration/360000:,.1f} hours\n"
+                    # creates a formatted string with each month in the top list
+
+                ttTopMonth = f"{ttTopMonth}\n{string}"
+                # joins together the month strings and makes them new lines
+                num += 1
+                # adds 1 to the number (ranking)
+
+    else:
+        # if the config option isn't set or is <1 
+        ttTopMonth = ""
 
 
     ### Top Years ###
 
-    ttTopYears = int(Config.get("Summary", "top_Years"))
+    topYearCount = int(Config.get("Summary", "top_Years"))
     # saves the config option for number of top years to get
 
-    if ttTopYears >= 1:
+    if topYearCount == 1:
+        yearPrefix = "Most listened to year"
+    elif topYearCount == 0:
+        yearPrefix = ""
+    else:
+        yearPrefix = "Most listened to years"
+
+    if topYearCount >= 1:
         # ensures there's at least one year to check the top list for
-        ttMaxYear = 2
-    # it has to be like "find the earliest date (y), then go through each duration for each song and calculate the total amount of ms the song was listened to during (y) and then list the years with the durations"
-    # saves the year that has the most playtime
+
+        yearDurations = csvYM.resample("YS", on="Date")["Duration"].sum()
+        # adds up all the song durations based on the date they were listened to
+
+        topYears = yearDurations.nlargest(topYearCount)
+        # finds the config-based number of largest (most listened to) years, turns into a series
+
+        ttTopYear = ""
+        num = 0
+        # sets up temp variables
+
+        for year, duration in topYears.items():
+            # repeats for every year in the top list
+            string = f"#{num+1}: {year.strftime("%Y")}\n     Listened for {duration/360000:,.1f} hours\n"
+
+            ttTopYear = f"{ttTopYear}\n{string}"
+            # joins together the year strings and makes them new lines
+            num += 1
+            # adds 1 to the number (ranking)
+    else:
+        # if the config option isn't set or is <1
+        ttTopYear = ""
 
 
     ### Summary Writer ###
@@ -644,19 +773,17 @@ def Stage4Summary():
     topTracks = (
                 f"{ttSummaryTopText}\n\n\n"
                 "\n"
-                f"Favorite {artistPrefix}:\n{ttArtistString}\n\n"
+                f"{artistPrefix}:\n{ttArtistString}\n\n"
                 "\n"
-                f"Favorite {albumPrefix}:\n{ttAlbumString}\n\n"
+                f"{albumPrefix}:\n{ttAlbumString}\n\n"
                 "\n"
-                f"Favorite {trackPrefix}:\n{ttPlaycount}\n\n"
+                f"{trackPrefix}:\n{ttPlaycount}\n\n"
                 "\n"
-                f"Total time spent listening:\n\n{ttTotalTime}\n\n"
+                f"Total time spent listening:\n\n{ttTotalTime}\n\n\n"
                 "\n"
-                f"PLAYTIME/COUNT MONTH\n"
+                f"{monthPrefix}:\n{ttTopMonth}\n\n"
                 "\n"
-                f"PLAYTIME/COUNT YEAR\n"
-                "\n"
-                
+                f"{yearPrefix}:\n{ttTopYear}"
                 )
     # stores all the information as formatted strings printed across newlines
     
