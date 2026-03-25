@@ -5,7 +5,7 @@ import easygui
 import tkinter as tk
 
 
-SHA_DSIver = "v0.28.2.0625"
+SHA_DSIver = "v0.3.18.1628"
 
 
 
@@ -162,8 +162,8 @@ def StageTwoStarter():
         csvEmptier.close()
         # opens the csv, writes nothing (effectively deleting everything), then closes the file
 
-    with open("./Data/stage1.json", "r") as processedStreams:
-        # opens the stage1.json file
+    with open("./Data/DSIstage1.json", "r") as processedStreams:
+        # opens the DSIstage1.json file
         processedContent = processedStreams.read()
         # stores the processed file inside a variable
         streamList = json.loads(processedContent)
@@ -227,14 +227,24 @@ def StageThree():
     csvDiscord = csvDiscord[columns]
     # after all tracks are done and the for loop ends, inserts a new column containing the playcount for each track
 
-    csvHours = str(((csvDiscord["Total Time"].sum() / 1000) / 60) / 60)
-    # takes the total hours from the csv (turns total time for each track from milliseconds to (/1000) seconds to minutes (/60) to hours (/60) )
+    csvSeconds = (csvDiscord["Total Time"].sum() / 1000)
+    # takes the total hours from the csv (turns total time for each track from milliseconds to (/1000) seconds to minutes (/60) to hours (/60)
+    csvMinutes = (csvSeconds / 60)
+    # turns the second variable to minutes
+    csvHours = (csvMinutes / 60)
+    # turns the minute variable to hours
 
-    with open("./Data/CSV/hours.txt", "w") as hours:
+    csvTimes = (
+        f"Total hours = {csvHours}\n"
+        f"Total minutes = {csvMinutes}\n"
+        f"Total seconds = {csvSeconds}"
+    )
+
+    with open("./Data/CSV/totalTimes.txt", "w") as times:
         # opens hours.txt
-        hours.write(csvHours)
-        # pushes the hours text to the file
-    hours.close()
+        times.write(csvTimes)
+        # pushes the times text to the file
+    times.close()
     # closes the file
 
     csvDiscord = csvDiscord.explode("URI")

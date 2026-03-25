@@ -6,7 +6,7 @@ import tkinter as tk
 from collections import Counter
 
 
-SHAver = "v0.28.2.0640"
+SHAver = "v0.3.10.0016"
 
 
 
@@ -374,15 +374,25 @@ def StageThree():
         csvDiscord = csvDiscord[columns]
         # after all tracks are done and the for loop ends, inserts a new column containing the playcount for each track
 
-        csvHours = str(((csvDiscord["Total Time"].sum() / 1000) / 60) / 60)
-        # takes the total hours from the csv (turns total time for each track from milliseconds to (/1000) seconds to minutes (/60) to hours (/60) )
+        csvSeconds = (csvDiscord["Total Time"].sum() / 1000)
+        # takes the total hours from the csv (turns total time for each track from milliseconds to (/1000) seconds to minutes (/60) to hours (/60)
+        csvMinutes = (csvSeconds / 60)
+        # turns the second variable to minutes
+        csvHours = (csvMinutes / 60)
+        # turns the minute variable to hours
 
-        with open("./Data/CSV/hours.txt", "w") as hours:
+        csvTimes = (
+            f"Total hours = {csvHours}\n"
+            f"Total minutes = {csvMinutes}\n"
+            f"Total seconds = {csvSeconds}"
+        )
+
+        with open("./Data/CSV/totalTimes.txt", "w") as times:
             # opens hours.txt
-            hours.write(csvHours)
-            # pushes the hours text to the file
-        hours.close()
-        # closes the file (slight performance improvement)
+            times.write(csvTimes)
+            # pushes the times text to the file
+        times.close()
+        # closes the file
 
         csvDiscord = csvDiscord.explode("URI")
         # "explodes" the CSV (takes all the tracks with multiple URIs and splits them into their own rows with identical data across the track's URIs)
@@ -402,7 +412,7 @@ def StageThree():
 
 
 
-def Stage4Summary():
+def StageFourSummary():
     """Stage 4-1 / Summary function"""
 
     csvSum = pd.read_csv("./Data/CSV/stage3.csv")
@@ -953,12 +963,12 @@ def opSelStage4():
             else:
                 print("Charts require a Summary file - creating one")
                 # charts require a summary txt to exist
-                Stage4Summary()
+                StageFourSummary()
 
         else:
             # if the selected Stage 4 op is (S)ummary
             print("Starting Stage 4 - Summary\n")
-            Stage4Summary()
+            StageFourSummary()
         
     else:
         # if the CSV doesn't exist
