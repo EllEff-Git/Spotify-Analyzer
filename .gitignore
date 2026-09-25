@@ -1,20 +1,14 @@
-!Data
-!.gitignore
-!config.ini
-!main.py
-!README.md
-# files that should always be included
-
-todo.txt
+*.spec
+*.exe
+*.xcf
+*.txt
 __pycache__
-SHA.ico
-SHA.xcf
-SHA.spec
-SHA.exe
-SHA-DSI.exe
-SHA-DSI.spec
-/dist
-/build
-/.venv
 .vscode
-# temp, test and/or log files
+.venv
+build/
+dist
+NOTINCLUDE/
+compiler.py
+installer.py
+SHA.iss
+SHAver.py
