@@ -3077,11 +3077,13 @@ def StageThree():
     # if the config setting for DSI exporting is enabled
         dsiStageThreeOutput = stageThreeData.groupby("Track").agg({"Artist": "first", "Album": "first", "Duration": list, "Date": list, "Time": list, "Total Time": "sum", "URI": lambda x: list(dict.fromkeys(x.dropna()))})
         # stores the csvData as a groupby of just the track (this is what DSI requires to function)
+        stageThreeData.insert(0, "Playcount", 1)
+        # inserts a playcount of 1 per column
         dsiStageThreeOutput.insert(0, "Playcount", dsiStageThreeOutput["Date"].str.len())
-        # inserts a playcount column that counts the total plays of that track (counts the length of date strings for the track)
+        # inserts a playcount column (to both dataframes) that counts the total plays of that track (counts the length of date strings for the track)
 
         csvSeconds = float(dsiStageThreeOutput["Total Time"].sum() / 1000)
-        # takes the total hours from the csv (turns total time for each track from milliseconds to (/1000) seconds to minutes (/60) to hours (/60)
+        # takes the total seconds from the dataframe's total time (milliseconds)
         csvMinutes = float(csvSeconds / 60)
         # turns the second variable to minutes
         csvHours = float(csvMinutes / 60)
@@ -3097,33 +3099,33 @@ def StageThree():
         # grabs the 10 highest in the total time column
         top10Tracks = {}
         # empty dict to hold the top track data
-        for _, row in top10TrackDF.iterrows():
-        # goes through every row in the dataframe
+        for rank, (index, row) in enumerate(top10TrackDF.iterrows(), start=1):
+        # goes through every row in the dataframe, gets the rank (row number), index (name of the track) and row data
             for uri in row["URI"]:
             # if there's more than 1 URI stored in the row (multi-URI tracks)
-                top10Tracks[uri] = row["Total Time"]
-                # stores that URI as the key of the dict, the total time as the value
+                top10Tracks[uri] = {"Time": row["Total Time"], "Count": row["Playcount"], "Rank": rank}
+                # stores that URI as the key of the dict, with a nested dictionary of Time, (Play)Count and Rank as its keys
 
-        top10ArtistDF = stageThreeData.groupby("Artist").agg({"Total Time": "sum", "URI": lambda x: list(dict.fromkeys(x.dropna()))}).nlargest(10, "Total Time")
-        # groups the original data by artists, adds up the total time and keeps the URIs intact, then gets the 10 highest
+        top10ArtistDF = stageThreeData.groupby("Artist").agg({"Total Time": "sum", "Playcount": "sum", "URI": lambda x: list(dict.fromkeys(x.dropna()))}).nlargest(10, "Total Time")
+        # groups the original data by artists, adds up the total time and playcounts, keeps the URIs intact, then gets the 10 highest from that datarframe
         top10Artists = {}
         # empty dict...
-        for _, row in top10ArtistDF.iterrows():
-        # goes through every row in the dataframe
+        for rank, (index, row )in enumerate(top10ArtistDF.iterrows(), start=1):
+        # goes through every row in the dataframe...
             for uri in row["URI"]:
             # if there's more than...
-                top10Artists[uri] = row["Total Time"]
+                top10Artists[uri] = {"Time": row["Total Time"], "Count": row["Playcount"], "Rank": rank}
                 # stores that URI..
 
-        top10AlbumDF = stageThreeData.groupby("Album").agg({"Total Time": "sum", "URI": lambda x: list(dict.fromkeys(x.dropna()))}).nlargest(10, "Total Time")
-        # groups the original data by albums, adds up the total time and keeps the URIs intact, then gets the 10 highest
+        top10AlbumDF = stageThreeData.groupby("Album").agg({"Total Time": "sum", "Playcount": "sum", "URI": lambda x: list(dict.fromkeys(x.dropna()))}).nlargest(10, "Total Time")
+        # groups the original data by albums, adds up the total time and playcounts, keeps the URIs intact, then gets the 10 highest from that datarframe
         top10Albums = {}
         # empty dict...
-        for _, row in top10AlbumDF.iterrows():
-        # goes through every row in the dataframe
+        for rank, (index, row) in enumerate(top10AlbumDF.iterrows(), start=1):
+        # goes through every row in the dataframe...
             for uri in row["URI"]:
             # if there's more than...
-                top10Albums[uri] = row["Total Time"]
+                top10Albums[uri] = {"Time": row["Total Time"], "Count": row["Playcount"], "Rank": rank}
                 # stores that URI...
 
         uniqueTracks = len(stageThreeData["Track"].unique())
