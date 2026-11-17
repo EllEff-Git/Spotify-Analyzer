@@ -2866,6 +2866,9 @@ def StageOne(zipPath: str):
     global stageOneOutput
     # global -> local
 
+    stageOneOutput = []
+    # clears the list (prevents accumulated data)
+
     with zipfile.ZipFile(zipPath, "r") as dataFiles:
         # opens the zip file via formed path
 
@@ -2970,6 +2973,9 @@ def StageTwo():
     """Stage 2: Raw Stage 1 output list -> list of nicely formatted data"""
     global stageTwoOutput
     # global -> local
+
+    stageTwoOutput = []
+    # clears the list (prevents accumulated data)
 
     print(f"\n{timestamper()} | Starting Stage 2: Data Formatting\n")
     # user inform
